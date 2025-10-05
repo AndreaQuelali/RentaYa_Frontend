@@ -1,39 +1,53 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { Link } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import React from 'react';
+import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Logo from '@/assets/logo';
+
+function PropertyCard({ title, subtitle, price }: { title: string; subtitle: string; price: string }) {
+  return (
+    <View className="w-[48%] bg-white border border-gray-200 rounded-xl p-3 mb-4">
+      <View className="flex-row justify-between items-center mb-2">
+        <Text className="text-xs px-2 py-1 bg-gray-100 rounded-full">Alquiler</Text>
+        <Ionicons name="heart-outline" size={18} color="#6B7280" />
+      </View>
+      <View className="h-24 bg-gray-200 rounded-lg items-center justify-center mb-2">
+        <Text className="text-gray-500 text-xs">Imagen de propiedad</Text>
+      </View>
+      <Text className="text-xs text-gray-700 mb-1" numberOfLines={1}>{title}</Text>
+      <Text className="text-xs text-gray-500 mb-2" numberOfLines={1}>{subtitle}</Text>
+      <Text className="text-base font-semibold">{price}</Text>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   return (
-    <ScrollView className="flex-1 mt-14  px-4 py-6">
-      <ThemedView className="items-center mb-8">
-        <ThemedText className="text-3xl font-bold text-primary mb-2">Rentaya</ThemedText>
-        <ThemedText className="text-base text-gray-500">¡Bienvenido! Encuentra y renta lo que necesitas.</ThemedText>
-      </ThemedView>
+    <View className="flex-1 bg-white">
+      <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
+        <Logo size={20}/>
+        <Text className="text-white font-semibold text-lg">RentaYa</Text>
+      </View>
 
-      <ThemedView className="rounded-xl shadow p-4 mb-6">
-        <ThemedText className="text-xl font-semibold text-primary mb-2">¿Qué buscas hoy?</ThemedText>
-        <ThemedText className="text-gray-100 mb-4">Explora categorías y encuentra productos o servicios para rentar cerca de ti.</ThemedText>
-        <TouchableOpacity className="bg-primary rounded-lg py-2 px-4 self-start">
-          <Link href="/modal" asChild>
-            <ThemedText className="font-bold">Explorar</ThemedText>
-          </Link>
-        </TouchableOpacity>
-      </ThemedView>
+      <ScrollView className="flex-1">
+        <View className="px-4 py-4">
+          <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-3 py-2">
+            <Ionicons name="search-outline" size={18} color="#6B7280" />
+            <TextInput placeholder="Buscar" className="flex-1 px-2 py-1" />
+            <Pressable className="ml-2 p-2">
+              <Ionicons name="options-outline" size={18} color="#11181C" />
+            </Pressable>
+          </View>
 
-      <ThemedView className="rounded-xl shadow p-4 mb-6">
-        <ThemedText className="text-lg font-semibold text-primary mb-2">¿Tienes algo para rentar?</ThemedText>
-        <ThemedText className="text-gray-100 mb-4">Publica tu producto o servicio y genera ingresos extra.</ThemedText>
-        <TouchableOpacity className="bg-secondary rounded-lg py-2 px-4 self-start">
-          <Link href="/settings" asChild>
-            <ThemedText className="font-bold">Publicar</ThemedText>
-          </Link>
-        </TouchableOpacity>
-      </ThemedView>
-
-      <ThemedView className="items-center mt-8">
-        <ThemedText className="text-xs">Powered by Rentaya</ThemedText>
-      </ThemedView>
-    </ScrollView>
+          <View className="mt-4 flex-row flex-wrap justify-between">
+            <PropertyCard title="Casa en Zona Norte" subtitle="Imagen de propiedad 1" price="Bs 800/mes" />
+            <PropertyCard title="Departamento en Centro" subtitle="Imagen de propiedad 2" price="Bs 600/mes" />
+            <PropertyCard title="Casa en Zona Norte" subtitle="Imagen de propiedad 1" price="Bs 800/mes" />
+            <PropertyCard title="Departamento en Centro" subtitle="Imagen de propiedad 2" price="Bs 600/mes" />
+            <PropertyCard title="Casa en Zona Norte" subtitle="Imagen de propiedad 1" price="Bs 800/mes" />
+            <PropertyCard title="Departamento en Centro" subtitle="Imagen de propiedad 2" price="Bs 600/mes" />
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
