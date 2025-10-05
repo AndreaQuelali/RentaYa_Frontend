@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { router } from 'expo-router';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/assets/logo';
@@ -16,14 +17,14 @@ export default function LoginScreen() {
     contentContainerStyle={{ flexGrow: 1 }}
     keyboardShouldPersistTaps="handled"
   >
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-primary justify-end">
       
-      <View className=" items-center justify-center pt-20 pb-10">
+      <View className="items-center justify-center my-auto">
         <Logo/>
-        <h2 className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</h2>
+        <Text className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</Text>
         </View>
 
-      <View className="bg-white rounded-t-2xl border border-gray-200 p-5 mx-4 -mt-6">
+      <View className="bg-white rounded-t-2xl border border-gray-200 px-5 pt-12 pb-20 w-screen">
         <Text className="text-xl font-semibold text-center mb-4">Iniciar sesión</Text>
 
         <View className="gap-3">
@@ -55,14 +56,14 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        <Pressable className="bg-primary rounded-xl py-4 items-center mt-6">
+        <Pressable className="bg-black rounded-xl py-4 items-center mt-6" onPress={() => (router as any).replace('/(tabs)')}>
           <Text className="text-white font-semibold">Iniciar sesión</Text>
         </Pressable>
 
       <View className="items-center mt-5">
         <Text className="text-gray-500 text-sm">¿No tienes una cuenta?</Text>
         <Link href="/(auth)/register" asChild>
-          <Pressable className="py-2">
+          <Pressable>
             <Text className="font-semibold text-secondary">Regístrate</Text>
           </Pressable>
         </Link>
