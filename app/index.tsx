@@ -7,10 +7,10 @@ export default function WelcomeScreen() {
     <View className="flex-1 bg-primary">
       <View className="flex-1 items-center justify-center">
         <Logo/>
-        <h2 className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</h2>
+        <Text className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</Text>
       </View>
       <View className="px-6 pb-8 gap-3">
-        <Link href="/(auth)/login" asChild>
+        <Link href={"/signin-options" as any} asChild>
           <Pressable className="bg-black rounded-xl py-4 items-center">
             <Text className="text-white font-semibold">Iniciar sesión</Text>
           </Pressable>
@@ -21,7 +21,7 @@ export default function WelcomeScreen() {
         </View>
 
         <Link href="/(auth)/register" asChild>
-          <Pressable className="py-1 items-center">
+          <Pressable className="pt-1 pb-10 items-center">
             <Text className="font-semibold text-white">Regístrate</Text>
           </Pressable>
         </Link>

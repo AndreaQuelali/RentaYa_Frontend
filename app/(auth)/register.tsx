@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/assets/logo';
 
@@ -17,18 +17,19 @@ export default function RegisterScreen() {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className=" items-center justify-center pt-20 pb-10">
-                <Logo/>
-                <h2 className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</h2>
-                </View>
+        <View className="flex-1 bg-primary justify-end">
+          <View className=" items-center justify-center my-auto">
+            <Logo/>
+            <Text className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</Text>
+          </View>
       
 
-        <View className="bg-white rounded-t-2xl border border-gray-200 p-5 mx-4 -mt-6">
+        <View className="bg-white rounded-t-2xl border border-gray-200 px-5 pt-12 pb-20 w-screen">
           <Text className="text-xl font-semibold text-center mb-4">Registro de usuario</Text>
 
           <View className="gap-3">
             <View className="gap-2">
-              <Text className="text-sm font-medium">Nombre</Text>
+              <Text className="text-sm font-medium">Nombres</Text>
               <TextInput
                 placeholder="Escribe aquí"
                 className="border border-gray-200 rounded-xl px-4 py-3"
@@ -36,10 +37,9 @@ export default function RegisterScreen() {
             </View>
 
             <View className="gap-2">
-              <Text className="text-sm font-medium">Teléfono</Text>
+              <Text className="text-sm font-medium">Apellidos</Text>
               <TextInput
                 placeholder="Escribe aquí"
-                keyboardType="phone-pad"
                 className="border border-gray-200 rounded-xl px-4 py-3"
               />
             </View>
@@ -69,22 +69,20 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          <Pressable className="bg-primary rounded-xl py-4 items-center mt-6">
+          <Pressable className="bg-black rounded-xl py-4 items-center mt-6" onPress={() => router.push('verify' as any)}>
             <Text className="text-white font-semibold">Registrar</Text>
           </Pressable>
-          <View className="items-center mt-5 mb-6">
+          <View className="items-center mt-5">
           <Text className="text-gray-500 text-sm">¿Ya tienes cuenta?</Text>
           <Link href="/(auth)/login" asChild>
-            <Pressable className="py-2">
+            <Pressable>
               <Text className="font-semibold text-secondary">Inicia sesión</Text>
             </Pressable>
           </Link>
         </View>
         </View>
-
-        
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </ScrollView>
+  </KeyboardAvoidingView>
   );
 }
-
