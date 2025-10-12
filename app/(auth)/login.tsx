@@ -1,77 +1,99 @@
-import { useState } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView } from 'react-native';
 import { Link } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/assets/logo';
+import { FormField } from '@/components/forms/form';
+import { useLoginForm } from '@/hooks/auth/use-login-form';
 
 export default function LoginScreen() {
-  const [show, setShow] = useState(false);
+  const { form, onSubmit, isLoading } = useLoginForm();
+  const { control, handleSubmit, formState: { errors } } = form;
 
   return (
-     <KeyboardAvoidingView
-          className="flex-1 bg-primary"
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <SafeAreaView className="flex-1 bg-primary">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-    <ScrollView
-    contentContainerStyle={{ flexGrow: 1 }}
-    keyboardShouldPersistTaps="handled"
-  >
-    <View className="flex-1 bg-primary justify-end">
-      
-      <View className="items-center justify-center my-auto">
-        <Logo/>
-        <Text className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</Text>
-        </View>
-
-      <View className="bg-white rounded-t-2xl border border-gray-200 px-5 pt-12 pb-20 w-screen">
-        <Text className="text-xl font-semibold text-center mb-4">Iniciar sesión</Text>
-
-        <View className="gap-3">
-          <View className="gap-2">
-            <Text className="text-sm font-medium">Correo electrónico</Text>
-            <TextInput
-              placeholder="Escribe aquí"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className="border border-gray-200 rounded-xl px-4 py-3"
-            />
+          <View className="flex-1 justify-center items-center px-6 pt-12 pb-8">
+            <View className="items-center">
+              <Logo />
+              <Text className="text-4xl font-bold text-white mt-4 tracking-tight">RentaYa</Text>
+              <Text className="text-white/80 text-base mt-2 text-center">
+                Tu hogar ideal te está esperando
+              </Text>
+            </View>
           </View>
 
-          <View className="gap-2">
-            <Text className="text-sm font-medium">Contraseña</Text>
-            <View className="flex-row items-center border border-gray-200 rounded-xl px-2">
-              <TextInput
-                placeholder="Escribe aquí"
-                secureTextEntry={!show}
-                className="flex-1 px-2 py-3"
+          <View className="bg-white rounded-t-3xl px-6 pt-8 pb-12 min-h-[400px]">
+            <View className="mb-8">
+              <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
+                Iniciar sesión
+              </Text>
+              <Text className="text-gray-600 text-center">
+                Accede a tu cuenta para continuar
+              </Text>
+            </View>
+
+            <View className="space-y-6">
+              <FormField
+                name="correoElectronico"
+                control={control}
+                label="Correo electrónico"
+                placeholder="ejemplo@correo.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                error={errors.correoElectronico?.message}
               />
-              <Pressable onPress={() => setShow((s: boolean) => !s)} className="p-2">
-                <Ionicons name={show ? 'eye' : 'eye-off'} size={20} />
+
+              <FormField
+                name="contrasena"
+                control={control}
+                label="Contraseña"
+                placeholder="Ingresa tu contraseña"
+                isPassword
+                autoComplete="password"
+                error={errors.contrasena?.message}
+              />
+
+              <View className="items-end">
+                <Pressable>
+                  <Text className="text-primary font-medium text-sm">
+                    ¿Olvidaste tu contraseña?
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View className="mt-8 space-y-4">
+              <Pressable 
+                className={`bg-primary rounded-xl py-4 items-center ${isLoading ? 'opacity-70' : ''}`}
+                onPress={handleSubmit(onSubmit)}
+                disabled={isLoading}
+              >
+                <Text className="text-white font-semibold text-base">
+                  {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+                </Text>
               </Pressable>
             </View>
-            <Pressable className="mt-1">
-              <Text className="text-xs text-gray-500">¿Olvidaste tu contraseña?</Text>
-            </Pressable>
+
+            <View className="flex-row items-center justify-center mt-8">
+              <Text className="text-gray-600 text-base">¿No tienes una cuenta? </Text>
+              <Link href="/(auth)/register" asChild>
+                <Pressable>
+                  <Text className="font-semibold text-primary">Regístrate</Text>
+                </Pressable>
+              </Link>
+            </View>
           </View>
-        </View>
-
-        <Pressable className="bg-black rounded-xl py-4 items-center mt-6" onPress={() => (router as any).replace('/(tabs)')}>
-          <Text className="text-white font-semibold">Iniciar sesión</Text>
-        </Pressable>
-
-      <View className="items-center mt-5">
-        <Text className="text-gray-500 text-sm">¿No tienes una cuenta?</Text>
-        <Link href="/(auth)/register" asChild>
-          <Pressable>
-            <Text className="font-semibold text-secondary">Regístrate</Text>
-          </Pressable>
-        </Link>
-      </View>
-      </View>
-    
-    </View>
-    </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
