@@ -24,7 +24,6 @@ export default {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: IS_DEV ? 'com.rentaya.mobile.dev' : 'com.rentaya.mobile',
-      googleServicesFile: './google-services.json',
       intentFilters: [
         {
           action: 'VIEW',
