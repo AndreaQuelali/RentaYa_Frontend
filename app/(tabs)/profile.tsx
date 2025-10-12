@@ -29,7 +29,7 @@ export default function ProfileScreen() {
           </View>
           <View>
             <Text className="text-base font-semibold">Usuario Demo</Text>
-            <Text className="text-gray-500 text-xs">andrealizbethquelalils@gmail.com</Text>
+            <Text className="text-gray-500 text-xs">userdemo@gmail.com</Text>
           </View>
         </View>
 
