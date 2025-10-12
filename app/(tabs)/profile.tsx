@@ -1,16 +1,44 @@
 import React from 'react';
-import { View, Text, Switch, Pressable } from 'react-native';
+import { View, Text, Switch, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMode } from '@/context/ModeContext';
+import { useAuth } from '@/context/AuthContext';
 import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const { mode, toggle } = useMode();
+  const { user, signOut } = useAuth();
   const isOwner = mode === 'owner';
 
   const onToggle = () => {
     toggle();
     (router as any).replace('/(tabs)');
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Cerrar sesión',
+      '¿Estás seguro de que quieres cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Cerrar sesión',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/');
+            } catch (error) {
+              console.error('Error signing out:', error);
+              Alert.alert('Error', 'No se pudo cerrar la sesión');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -28,8 +56,8 @@ export default function ProfileScreen() {
             <Text className="text-gray-600 font-semibold">U</Text>
           </View>
           <View>
-            <Text className="text-base font-semibold">Usuario Demo</Text>
-            <Text className="text-gray-500 text-xs">andrealizbethquelalils@gmail.com</Text>
+            <Text className="text-base font-semibold">{user?.displayName || 'Usuario'}</Text>
+            <Text className="text-gray-500 text-xs">{user?.email || 'email@ejemplo.com'}</Text>
           </View>
         </View>
 
@@ -67,7 +95,10 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        <Pressable className="mt-8 border border-gray-300 rounded-xl py-3 items-center">
+        <Pressable 
+          className="mt-8 border border-gray-300 rounded-xl py-3 items-center" 
+          onPress={handleSignOut}
+        >
           <Text className="font-semibold">Cerrar sesión</Text>
         </Pressable>
       </View>
