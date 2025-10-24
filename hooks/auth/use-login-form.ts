@@ -25,6 +25,6 @@ export function useLoginForm() {
   return {
     form,
     onSubmit,
-    isLoading: login.isLoading,
+    isLoading: login.isPending,
   };
 }

@@ -6,11 +6,11 @@ import { Alert} from 'react-native'
 
 export type User = {
   id: string;
-  correoElectronico: string;
-  nombreCompleto: string;
-  telefono?: string;
-  rol?: string;
-  estadoVerificacion?: string
+  email: string;
+  fullName: string;
+  phone?: string;
+  role?: string;
+  statusVerification?: string
 };
 
 export type AuthResponse = {
@@ -47,7 +47,7 @@ export function useAuth() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (payload: { correoElectronico: string; contrasena: string }) => {
+    mutationFn: async (payload: { email: string; password: string }) => {
       const response = await api.post('/api/auth/login', payload);
       return response.data as BackendResponse;
     },
