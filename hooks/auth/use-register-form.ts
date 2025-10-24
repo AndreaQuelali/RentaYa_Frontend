@@ -9,10 +9,10 @@ export function useRegisterForm() {
     const form = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
-            nombreCompleto: '',
-            telefono: '',
-            correoElectronico: '',
-            contrasena: '',
+            fullName: '',
+            phone: '',
+            email: '',
+            password: '',
         },
     });
 

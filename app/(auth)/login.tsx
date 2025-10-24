@@ -42,24 +42,24 @@ export default function LoginScreen() {
 
             <View className="space-y-6">
               <FormField
-                name="correoElectronico"
+                name="email"
                 control={control}
                 label="Correo electrónico"
                 placeholder="ejemplo@correo.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
-                error={errors.correoElectronico?.message}
+                error={errors.email?.message}
               />
 
               <FormField
-                name="contrasena"
+                name="password"
                 control={control}
                 label="Contraseña"
                 placeholder="Ingresa tu contraseña"
                 isPassword
                 autoComplete="password"
-                error={errors.contrasena?.message}
+                error={errors.password?.message}
               />
 
               <View className="items-end">
