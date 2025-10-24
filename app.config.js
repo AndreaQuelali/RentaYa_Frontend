@@ -1,0 +1,74 @@
+const IS_DEV = process.env.APP_VARIANT === 'development';
+
+export default {
+  expo: {
+    name: IS_DEV ? 'RentaYa (Dev)' : 'RentaYa',
+    slug: 'rentaya-mobile',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/images/icon.png',
+    scheme: 'com.rentaya.mobile',
+    userInterfaceStyle: 'automatic',
+    newArchEnabled: true,
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: IS_DEV ? 'com.rentaya.mobile.dev' : 'com.rentaya.mobile',
+    },
+    android: {
+      adaptiveIcon: {
+        backgroundColor: '#E6F4FE',
+        foregroundImage: './assets/images/android-icon-foreground.png',
+        backgroundImage: './assets/images/android-icon-background.png',
+        monochromeImage: './assets/images/android-icon-monochrome.png'
+      },
+      edgeToEdgeEnabled: true,
+      predictiveBackGestureEnabled: false,
+      package: IS_DEV ? 'com.rentaya.mobile.dev' : 'com.rentaya.mobile',
+      intentFilters: [
+        {
+          action: 'VIEW',
+          data: [
+            {
+              scheme: 'com.rentaya.mobile',
+              path: '/oauthredirect'
+            }
+          ],
+          category: ['BROWSABLE', 'DEFAULT']
+        }
+      ]
+    },
+    web: {
+      bundler: 'metro',
+      output: 'static',
+      favicon: './assets/images/favicon.png'
+    },
+    plugins: [
+      'expo-router',
+      'expo-dev-client',
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/images/splash-icon.png',
+          imageWidth: 200,
+          resizeMode: 'contain',
+          backgroundColor: '#ffffff',
+          dark: {
+            backgroundColor: '#000000'
+          }
+        }
+      ],
+      'expo-web-browser',
+      '@react-native-google-signin/google-signin'
+    ],
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true
+    },
+    extra: {
+      router: {},
+      eas: {
+        projectId: 'af09df62-3364-418b-a362-4e8a2499c509'
+      }
+    }
+  }
+};

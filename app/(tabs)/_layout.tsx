@@ -2,12 +2,14 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Ionicons } from '@expo/vector-icons';
+import { useMode } from '@/context/ModeContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { mode } = useMode();
 
   return (
     <Tabs
@@ -16,18 +18,52 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
+
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Explorar',
+          tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size ?? 24} color={color} />,
+          href: mode === 'owner' ? null : undefined,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="favorites"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="safari.fill" color={color} />,
+          title: 'Favoritos',
+          tabBarIcon: ({ color, size }) => <Ionicons name="heart-outline" size={size ?? 24} color={color} />,
+          href: mode === 'owner' ? null : undefined,
+        }}
+      />
+    
+      <Tabs.Screen
+        name="properties"
+        options={{
+          title: 'Propiedades',
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size ?? 24} color={color} />,
+          href: mode === 'user' ? null : undefined,
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: 'Reportes',
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size ?? 24} color={color} />,
+          href: mode === 'user' ? null : undefined,
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Mensajes',
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble-ellipses-outline" size={size ?? 24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size ?? 24} color={color} />,
         }}
       />
     </Tabs>
