@@ -7,9 +7,9 @@ import type { RegisterFormData } from '@/lib/validation/authSchema';
 export type RegisterResponse = {
     user: {
         id: string;
-        correoElectronico: string;
-        nombreCompleto: string;
-        telefono: string;
+        email: string;
+        fullName: string;
+        phone: string;
     };
     token: string;
 };

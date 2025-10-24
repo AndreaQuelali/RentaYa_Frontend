@@ -1,19 +1,19 @@
 import {z} from 'zod';
 
 export const registerSchema = z.object({
-    nombreCompleto: z
+    fullName: z
     .string()
     .min(1, 'El nombre es requerido')
     .min(2, 'El nombre debe tener al menos 2 caracteres'),
-    telefono: z
+    phone: z
     .string()
     .min(1, 'El teléfono es requerido')
     .regex(/^\d{8}$/, 'El teléfono debe tener 8 dígitos'),
-    correoElectronico: z
+    email: z
     .string()
     .min(1, 'El correo es requerido')
     .email('Formato de correo inválido'),
-    contrasena: z
+    password: z
     .string()
     .min(1, 'La contraseña es requerida')
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
@@ -23,11 +23,11 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-    correoElectronico: z
+    email: z
     .string()
     .min(1, 'El correo es requerido')
     .email('Formato de correo inválido'),
-    contrasena: z
+    password: z
     .string()
     .min(1, 'La contraseña es requerida')
 });

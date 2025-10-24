@@ -29,33 +29,33 @@ export default function RegisterScreen() {
 
             <View className="gap-3">
               <FormField
-                name="nombreCompleto"
+                name="fullName"
                 control={control}
                 label="Nombre completo"
                 placeholder='Escribe aquí'
-                error={errors.nombreCompleto?.message}
+                error={errors.fullName?.message}
               />
               <FormField
-                name="telefono"
+                name="phone"
                 control={control}
                 label="Teléfono"
                 placeholder='Escribe aquí'
-                error={errors.telefono?.message}
+                error={errors.phone?.message}
               />
               <FormField
-                name="correoElectronico"
+                name="email"
                 control={control}
                 label="Correo electrónico"
                 placeholder='example@gmail.com'
-                error={errors.correoElectronico?.message}
+                error={errors.email?.message}
               />
               <FormField
-                name="contrasena"
+                name="password"
                 control={control}
                 label="Contraseña"
                 placeholder='******'
                 isPassword
-                error={errors.contrasena?.message}
+                error={errors.password?.message}
               />
             </View>
 
