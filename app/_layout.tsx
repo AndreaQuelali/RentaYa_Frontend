@@ -5,6 +5,7 @@ import "@/global.css"
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ModeProvider } from '@/context/ModeContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { UserProfileProvider } from '@/context/UserProfileContext';
 import{QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {useState} from 'react';
 
@@ -28,6 +29,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
     <ModeProvider>
       <AuthProvider>
+        <UserProfileProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -37,6 +39,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>
+        </UserProfileProvider>
       </AuthProvider>
     </ModeProvider>
     </QueryClientProvider>
