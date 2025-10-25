@@ -1,13 +1,17 @@
 import React from 'react';
-import { View, Text, Switch, Pressable, Alert } from 'react-native';
+import { View, Text, Switch, Pressable, Alert, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMode } from '@/context/ModeContext';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/auth/use-auth';
+import { useUserProfile } from '@/context/UserProfileContext';
+import { useProfileImage } from '@/hooks/profile/use-profile-image';
 import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const { mode, toggle } = useMode();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
+  const { profile, loading } = useUserProfile();
+  const { uploading, selectImageSource } = useProfileImage();
   const isOwner = mode === 'owner';
 
   const onToggle = () => {
@@ -29,7 +33,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await signOut();
+              await logout();
               router.replace('/');
             } catch (error) {
               console.error('Error signing out:', error);
@@ -43,65 +47,92 @@ export default function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-white">
-  
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
         <Ionicons name="home-outline" size={20} color="#fff" />
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
-      <View className="px-4 py-5">
-       
-        <View className="flex-row items-center gap-3 mb-6">
-          <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
-            <Text className="text-gray-600 font-semibold">U</Text>
-          </View>
-          <View>
-            <Text className="text-base font-semibold">{user?.displayName || 'Usuario'}</Text>
-            <Text className="text-gray-500 text-xs">{user?.email || 'email@ejemplo.com'}</Text>
-          </View>
+      {loading && !profile ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" />
         </View>
-
-        <View className="mb-2">
-          <Text className="text-gray-600 text-sm mb-2">Modo de usuario</Text>
-          <View className="flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="person-circle-outline" size={18} color="#11181C" />
-              <Text className="font-medium">{isOwner ? 'Propietario' : 'Usuario'}</Text>
+      ) : (
+        <View className="px-4 py-5">
+          <View className="flex-row items-center gap-3 mb-6">
+            <Pressable onPress={selectImageSource} disabled={uploading}>
+              <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center overflow-hidden">
+                {uploading ? (
+                  <ActivityIndicator size="small" />
+                ) : profile?.profilePhoto ? (
+                  <Image 
+                    source={{ uri: profile.profilePhoto }} 
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <Text className="text-gray-600 font-semibold">
+                    {profile?.fullName?.charAt(0).toUpperCase() || 'U'}
+                  </Text>
+                )}
+              </View>
+              <View className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
+                <Ionicons name="camera" size={12} color="#fff" />
+              </View>
+            </Pressable>
+            <View>
+              <Text className="text-base font-semibold">
+                {profile?.fullName || user?.fullName || 'Usuario'}
+              </Text>
+              <Text className="text-gray-500 text-xs">
+                {profile?.email || user?.email || 'email@ejemplo.com'}
+              </Text>
             </View>
-            <Switch value={isOwner} onValueChange={onToggle} />
           </View>
-          <Text className="text-gray-500 text-xs mt-2">
-            {isOwner
-              ? 'Puedes publicar y administrar tus propiedades.'
-              : 'Puedes buscar y contactar propietarios.'}
-          </Text>
-        </View>
 
-        <View className="mt-6 gap-3">
-          <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="create-outline" size={18} />
-              <Text>Editar perfil</Text>
+          <View className="mb-2">
+            <Text className="text-gray-600 text-sm mb-2">Modo de usuario</Text>
+            <View className="flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="person-circle-outline" size={18} color="#11181C" />
+                <Text className="font-medium">{isOwner ? 'Propietario' : 'Usuario'}</Text>
+              </View>
+              <Switch value={isOwner} onValueChange={onToggle} />
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+            <Text className="text-gray-500 text-xs mt-2">
+              {isOwner
+                ? 'Puedes publicar y administrar tus propiedades.'
+                : 'Puedes buscar y contactar propietarios.'}
+            </Text>
+          </View>
+
+          <View className="mt-6 gap-3">
+            <Pressable 
+              className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3"
+              onPress={() => router.push('/settings')}
+            >
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="create-outline" size={18} />
+                <Text>Editar perfil</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+            </Pressable>
+
+            <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="notifications-outline" size={18} />
+                <Text>Notificaciones</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+            </Pressable>
+          </View>
+
+          <Pressable 
+            className="mt-8 border border-gray-300 rounded-xl py-3 items-center" 
+            onPress={handleSignOut}
+          >
+            <Text className="font-semibold">Cerrar sesión</Text>
           </Pressable>
-
-          <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="notifications-outline" size={18} />
-              <Text>Notificaciones</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-          </Pressable>
         </View>
-
-        <Pressable 
-          className="mt-8 border border-gray-300 rounded-xl py-3 items-center" 
-          onPress={handleSignOut}
-        >
-          <Text className="font-semibold">Cerrar sesión</Text>
-        </Pressable>
-      </View>
+      )}
     </View>
   );
 }
