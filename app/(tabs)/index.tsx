@@ -13,9 +13,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Logo from "@/assets/logo";
 import { inmuebleService, Inmueble } from "@/lib/services/inmuebleService";
+import { useRouter } from "expo-router";
 
 interface PropertyCardProps {
   property: Inmueble;
+  onPress?: () => void;
 }
 
 interface Filters {
@@ -26,13 +28,9 @@ interface Filters {
   bedrooms: string; // 'all' | '1' | '2' | '3' | '4+'
 }
 
-interface PropertyCardProps {
-  property: Inmueble;
-}
-
-function PropertyCard({ property }: PropertyCardProps) {
+function PropertyCard({ property, onPress }: PropertyCardProps) {
   return (
-    <View className="w-[48%] bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
+    <Pressable onPress={onPress} className="w-[48%] bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
       <View className="flex-row justify-between items-center p-2 absolute top-0 left-0 right-0 z-10">
         <Text className="text-xs px-2 py-1 bg-white/90 rounded-full">
           {property.operationType === "alquiler" ? "Alquiler" : "Anticrético"}
@@ -74,7 +72,7 @@ function PropertyCard({ property }: PropertyCardProps) {
           </Text>
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -91,6 +89,7 @@ export default function HomeScreen() {
     maxPrice: "",
     bedrooms: "all",
   });
+  const router = useRouter();
 
   const loadProperties = async () => {
     try {
@@ -251,7 +250,13 @@ export default function HomeScreen() {
           ) : (
             <View className="mt-4 flex-row flex-wrap justify-between">
               {filteredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  onPress={() =>
+                    router.push((`/property/${String(property.id)}` as any))
+                  }
+                />
               ))}
             </View>
           )}
