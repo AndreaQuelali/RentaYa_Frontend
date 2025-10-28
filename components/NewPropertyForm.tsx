@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import PhotoUrlPicker from './PhotoUpload';
+import { api } from '../lib/api';
 
 export default function NewPropertyForm() {
   const [title, setTitle] = useState('');
@@ -9,10 +11,72 @@ export default function NewPropertyForm() {
   const [price, setPrice] = useState('');
   const [dealMode, setDealMode] = useState('');
   const [desc, setDesc] = useState('');
+  const [address, setAddress] = useState('');
+  const [area, setArea] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [showModePicker, setShowModePicker] = useState(false);
   const typeOptions = ['Casa', 'Departamento', 'Oficina', 'Terreno'];
-  const modeOptions = ['Alquiler', 'Venta', 'Anticrético'];
+  const modeOptions = ['Alquiler', 'Anticrético'];
+
+  const normalizeDealMode = (mode: string) => {
+    const m = mode.toLowerCase();
+    if (m.startsWith('alquiler')) return 'alquiler';
+    if (m.normalize('NFD').replace(/\p{Diacritic}/gu, '') === 'anticretico') return 'anticretico';
+    return '';
+  };
+
+  const onSubmit = async () => {
+    try {
+      if (!title.trim()) {
+        Alert.alert('Falta título', 'Por favor ingresa un título');
+        return;
+      }
+      if (!price || isNaN(Number(price))) {
+        Alert.alert('Precio inválido', 'Ingresa un precio numérico');
+        return;
+      }
+      const tipoOperacion = normalizeDealMode(dealMode);
+      if (!tipoOperacion) {
+        Alert.alert('Modalidad inválida', 'Selecciona Alquiler o Anticrético');
+        return;
+      }
+
+      const payload: any = {
+        titulo: title.trim(),
+        descripcion: desc?.trim() || undefined,
+        direccion: address.trim(),
+        ciudad: city?.trim() || undefined,
+        dormitorios: 1,
+        banos: 1,
+        areaM2: area ? Number(area) : undefined,
+        precio: Number(price),
+        tipoOperacion,
+        fotos: photos && photos.length > 0 ? photos : undefined,
+      };
+
+      setSubmitting(true);
+      const res = await api.post('/api/inmuebles', payload);
+      setSubmitting(false);
+
+      Alert.alert('Éxito', 'Propiedad publicada correctamente');
+     
+      setTitle('');
+      setCity('');
+      setType('');
+      setPrice('');
+      setDealMode('');
+      setDesc('');
+      setAddress('');
+      setArea('');
+      setPhotos([]);
+    } catch (error: any) {
+      setSubmitting(false);
+      const msg = error?.response?.data?.message || 'No se pudo publicar. Intenta nuevamente.';
+      Alert.alert('Error', msg);
+    }
+  };
 
   return (
     <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
@@ -30,6 +94,10 @@ export default function NewPropertyForm() {
             <View className="border border-gray-200 rounded-xl px-3 py-3 flex-row items-center gap-2">
               <Ionicons name="location-outline" size={16} color="#6B7280" />
               <TextInput className="flex-1" placeholder="Ciudad" value={city} onChangeText={setCity} />
+            </View>
+            <View className="border border-gray-200 rounded-xl px-3 py-3 flex-row items-center gap-2 mt-2">
+              <Ionicons name="home-outline" size={16} color="#6B7280" />
+              <TextInput className="flex-1" placeholder="Ubicación (Av. Principal 123)" value={address} onChangeText={setAddress} />
             </View>
           </View>
 
@@ -72,25 +140,25 @@ export default function NewPropertyForm() {
             )}
           </View>
 
+
+          <View>
+            <Text className="text-sm font-medium mb-1">Área (m²)</Text>
+            <TextInput className="border border-gray-200 rounded-xl px-4 py-3" placeholder="Ej. 80" keyboardType="numeric" value={area} onChangeText={setArea} />
+          </View>
+
           <View>
             <Text className="text-sm font-medium mb-1">Descripción</Text>
             <TextInput className="border border-gray-200 rounded-xl px-4 py-3" placeholder="Escribe aquí" value={desc} onChangeText={setDesc} multiline numberOfLines={4} />
           </View>
 
           <View>
-            <Text className="text-sm font-medium mb-1">Fotos</Text>
-            <View className="border border-gray-200 rounded-xl px-4 py-8 items-center justify-center">
-              <Ionicons name="cloud-upload-outline" size={28} color="#6B7280" />
-              <Text className="text-gray-500 text-xs mt-2 text-center">Arrastra tus fotos aquí o haz clic para seleccionar</Text>
-              <Pressable className="mt-3 border border-gray-300 rounded-lg px-3 py-2">
-                <Text>Seleccionar fotos</Text>
-              </Pressable>
-            </View>
+            <PhotoUrlPicker value={photos} onChange={setPhotos} title="Fotos (URLs)" />
           </View>
+
         </View>
 
-        <Pressable className="bg-black rounded-xl py-4 items-center mt-6">
-          <Text className="text-white font-semibold">Publicar</Text>
+        <Pressable disabled={submitting} onPress={onSubmit} className="bg-black rounded-xl py-4 items-center mt-6 opacity-100">
+          <Text className="text-white font-semibold">{submitting ? 'Publicando...' : 'Publicar'}</Text>
         </Pressable>
       </View>
     </ScrollView>
