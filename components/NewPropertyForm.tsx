@@ -517,6 +517,7 @@ export default function NewPropertyForm({ onSuccess }: NewPropertyFormProps) {
               </Text>
             )}
           </View>
+
         </View>
 
         {/* Botón Publicar */}

@@ -87,23 +87,26 @@ export default function ProfileScreen() {
           </Text>
         </View>
 
-        <View className="mt-6 gap-3">
-          <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="create-outline" size={18} />
-              <Text>Editar perfil</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-          </Pressable>
+          <View className="mt-6 gap-3">
+            <Pressable 
+              className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3"
+              onPress={() => router.push('/settings')}
+            >
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="create-outline" size={18} />
+                <Text>Editar perfil</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+            </Pressable>
 
-          <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="notifications-outline" size={18} />
-              <Text>Notificaciones</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-          </Pressable>
-        </View>
+            <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="notifications-outline" size={18} />
+                <Text>Notificaciones</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+            </Pressable>
+          </View>
 
         <Pressable
           className="mt-8 border border-gray-300 rounded-xl py-3 items-center"

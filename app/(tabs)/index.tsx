@@ -178,6 +178,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      {/* Header */}
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
         <Logo size={20} />
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
