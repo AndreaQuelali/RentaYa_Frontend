@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Esta aplicación necesita acceso a tu galería para que puedas seleccionar fotos de propiedades.",
+        "NSCameraUsageDescription": "Esta aplicación necesita acceso a tu cámara para que puedas tomar fotos de propiedades."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,6 +25,12 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.rentaya.mobile",
+      "permissions": [
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -42,6 +52,13 @@
     "plugins": [
       "expo-router",
       "expo-dev-client",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Esta aplicación necesita acceso a tu galería para que puedas seleccionar fotos de propiedades.",
+          "cameraPermission": "Esta aplicación necesita acceso a tu cámara para que puedas tomar fotos de propiedades."
+        }
+      ],
       [
         "expo-splash-screen",
         {

@@ -1,43 +1,39 @@
-import React from 'react';
-import { View, Text, Switch, Pressable, Alert, Image, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useMode } from '@/context/ModeContext';
-import { useAuth } from '@/hooks/auth/use-auth';
-import { useUserProfile } from '@/context/UserProfileContext';
-import { useProfileImage } from '@/hooks/profile/use-profile-image';
-import { router } from 'expo-router';
+import React from "react";
+import { View, Text, Switch, Pressable, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useMode } from "@/context/ModeContext";
+import { useAuth as useAuthHook } from "@/hooks/auth/use-auth";
+import { router } from "expo-router";
 
 export default function ProfileScreen() {
   const { mode, toggle } = useMode();
-  const { user, logout } = useAuth();
-  const { profile, loading } = useUserProfile();
-  const { uploading, selectImageSource } = useProfileImage();
-  const isOwner = mode === 'owner';
+  const { user, logout } = useAuthHook();
+  const isOwner = mode === "owner";
 
   const onToggle = () => {
     toggle();
-    (router as any).replace('/(tabs)');
+    (router as any).replace("/(tabs)");
   };
 
   const handleSignOut = () => {
     Alert.alert(
-      'Cerrar sesión',
-      '¿Estás seguro de que quieres cerrar sesión?',
+      "Cerrar sesión",
+      "¿Estás seguro de que quieres cerrar sesión?",
       [
         {
-          text: 'Cancelar',
-          style: 'cancel',
+          text: "Cancelar",
+          style: "cancel",
         },
         {
-          text: 'Cerrar sesión',
-          style: 'destructive',
+          text: "Cerrar sesión",
+          style: "destructive",
           onPress: async () => {
             try {
               await logout();
-              router.replace('/');
+              // El logout del hook ya hace router.replace('/')
             } catch (error) {
-              console.error('Error signing out:', error);
-              Alert.alert('Error', 'No se pudo cerrar la sesión');
+              console.error("Error signing out:", error);
+              Alert.alert("Error", "No se pudo cerrar la sesión");
             }
           },
         },
@@ -52,57 +48,44 @@ export default function ProfileScreen() {
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
-      {loading && !profile ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" />
-        </View>
-      ) : (
-        <View className="px-4 py-5">
-          <View className="flex-row items-center gap-3 mb-6">
-            <Pressable onPress={selectImageSource} disabled={uploading}>
-              <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center overflow-hidden">
-                {uploading ? (
-                  <ActivityIndicator size="small" />
-                ) : profile?.profilePhoto ? (
-                  <Image 
-                    source={{ uri: profile.profilePhoto }} 
-                    className="w-full h-full"
-                  />
-                ) : (
-                  <Text className="text-gray-600 font-semibold">
-                    {profile?.fullName?.charAt(0).toUpperCase() || 'U'}
-                  </Text>
-                )}
-              </View>
-              <View className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
-                <Ionicons name="camera" size={12} color="#fff" />
-              </View>
-            </Pressable>
-            <View>
-              <Text className="text-base font-semibold">
-                {profile?.fullName || user?.fullName || 'Usuario'}
-              </Text>
-              <Text className="text-gray-500 text-xs">
-                {profile?.email || user?.email || 'email@ejemplo.com'}
-              </Text>
-            </View>
-          </View>
-
-          <View className="mb-2">
-            <Text className="text-gray-600 text-sm mb-2">Modo de usuario</Text>
-            <View className="flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
-              <View className="flex-row items-center gap-2">
-                <Ionicons name="person-circle-outline" size={18} color="#11181C" />
-                <Text className="font-medium">{isOwner ? 'Propietario' : 'Usuario'}</Text>
-              </View>
-              <Switch value={isOwner} onValueChange={onToggle} />
-            </View>
-            <Text className="text-gray-500 text-xs mt-2">
-              {isOwner
-                ? 'Puedes publicar y administrar tus propiedades.'
-                : 'Puedes buscar y contactar propietarios.'}
+      <View className="px-4 py-5">
+        <View className="flex-row items-center gap-3 mb-6">
+          <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
+            <Text className="text-gray-600 font-semibold">
+              {user?.fullName?.charAt(0).toUpperCase() || "U"}
             </Text>
           </View>
+          <View>
+            <Text className="text-base font-semibold">
+              {user?.fullName || "Usuario"}
+            </Text>
+            <Text className="text-gray-500 text-xs">
+              {user?.email || "email@ejemplo.com"}
+            </Text>
+          </View>
+        </View>
+
+        <View className="mb-2">
+          <Text className="text-gray-600 text-sm mb-2">Modo de usuario</Text>
+          <View className="flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+            <View className="flex-row items-center gap-2">
+              <Ionicons
+                name="person-circle-outline"
+                size={18}
+                color="#11181C"
+              />
+              <Text className="font-medium">
+                {isOwner ? "Propietario" : "Usuario"}
+              </Text>
+            </View>
+            <Switch value={isOwner} onValueChange={onToggle} />
+          </View>
+          <Text className="text-gray-500 text-xs mt-2">
+            {isOwner
+              ? "Puedes publicar y administrar tus propiedades."
+              : "Puedes buscar y contactar propietarios."}
+          </Text>
+        </View>
 
           <View className="mt-6 gap-3">
             <Pressable 
@@ -125,14 +108,13 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          <Pressable 
-            className="mt-8 border border-gray-300 rounded-xl py-3 items-center" 
-            onPress={handleSignOut}
-          >
-            <Text className="font-semibold">Cerrar sesión</Text>
-          </Pressable>
-        </View>
-      )}
+        <Pressable
+          className="mt-8 border border-gray-300 rounded-xl py-3 items-center"
+          onPress={handleSignOut}
+        >
+          <Text className="font-semibold">Cerrar sesión</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
