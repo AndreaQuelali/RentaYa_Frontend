@@ -42,7 +42,7 @@ export default function PreferencesScreen() {
 
   const togglePropertyType = (type: PropertyType) => {
     setSelectedPropertyTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
   };
 
@@ -50,7 +50,7 @@ export default function PreferencesScreen() {
     setSelectedModalities((prev) =>
       prev.includes(modality)
         ? prev.filter((m) => m !== modality)
-        : [...prev, modality]
+        : [...prev, modality],
     );
   };
 
@@ -58,12 +58,11 @@ export default function PreferencesScreen() {
     setSelectedLocations((prev) =>
       prev.includes(location)
         ? prev.filter((l) => l !== location)
-        : [...prev, location]
+        : [...prev, location],
     );
   };
 
   const handleSkip = () => {
-    // Saltar las preferencias y navegar directamente
     (router as any).replace("/(tabs)");
   };
 
@@ -76,11 +75,6 @@ export default function PreferencesScreen() {
   };
 
   const handleFinish = () => {
-    console.log("Preferencias guardadas:", {
-      propertyTypes: selectedPropertyTypes,
-      modalities: selectedModalities,
-      locations: selectedLocations,
-    });
     (router as any).replace("/(tabs)");
   };
 
@@ -189,7 +183,6 @@ export default function PreferencesScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-1 justify-end">
-          {/* Header */}
           <View className="items-center justify-center py-8 px-5">
             <View className="bg-white/10 rounded-full p-4 mb-4">
               <Ionicons name={getStepIcon() as any} size={40} color="white" />
@@ -202,12 +195,10 @@ export default function PreferencesScreen() {
             </Text>
           </View>
 
-          {/* Content card */}
           <View className="bg-white rounded-t-3xl px-5 pt-4 pb-8 min-h-[550px]">
             <StepIndicator currentStep={currentStep} totalSteps={3} />
 
             <View className="flex-1">
-              {/* Step title and description */}
               <View className="mb-6 mt-4">
                 <Text className="text-2xl font-bold text-gray-900 mb-2">
                   {getStepTitle()}
@@ -217,13 +208,10 @@ export default function PreferencesScreen() {
                 </Text>
               </View>
 
-              {/* Step content */}
               <View className="mb-8">{renderStepContent()}</View>
             </View>
 
-            {/* Action buttons */}
             <View className="gap-3 mt-auto pt-4">
-              {/* Botón principal: Siguiente/Finalizar */}
               <Pressable
                 className={`rounded-xl py-3 items-center ${
                   canProceed() ? "bg-gray-900" : "bg-gray-300"
@@ -243,7 +231,6 @@ export default function PreferencesScreen() {
                 </Text>
               </Pressable>
 
-              {/* Botón Omitir */}
               <Pressable
                 className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl items-center"
                 onPress={handleSkip}
