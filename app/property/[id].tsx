@@ -1,80 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator, Pressable, Linking } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { api } from '@/lib/api';
-
-interface PropertyPhoto {
-  id: string;
-  propertyId: string;
-  url: string;
-  order: number;
-  createdAt: any;
-}
-
-interface Owner {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  profilePhoto: string | null;
-}
-
-interface PropertyDetail {
-  id: string;
-  ownerId: string;
-  title: string;
-  description: string;
-  address: string;
-  city: string;
-  bedrooms: number;
-  bathrooms: number;
-  areaM2: string;
-  price: string;
-  operationType: string;
-  status: string;
-  createdAt: any;
-  updatedAt: any;
-  propertyPhotos: PropertyPhoto[];
-  owner: Owner;
-}
+import React from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+  Pressable,
+} from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigationHelper } from "@/hooks/useNavigationHelper";
+import { usePropertyDetail } from "@/hooks/properties/usePropertyDetail";
+import {
+  translateStatus,
+  getOperationTypeSuffix,
+  formatPrice,
+  getStatusColorClasses,
+} from "@/utils/propertyHelpers";
+import {
+  handleCall,
+  handleEmail,
+  handleWhatsApp,
+} from "@/utils/contactHelpers";
 
 export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [property, setProperty] = useState<PropertyDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    const fetchPropertyDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await api.get(`/api/inmuebles/${id}`);
-        setProperty(res.data.data);
-      } catch (e: any) {
-        console.error('Error fetching property details:', e);
-        setError('No se pudieron cargar los detalles de la propiedad');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchPropertyDetails();
-  }, [id]);
-
-  const handleCall = (phone: string) => {
-    Linking.openURL(`tel:${phone}`);
-  };
-
-  const handleEmail = (email: string) => {
-    Linking.openURL(`mailto:${email}`);
-  };
-
-  const handleWhatsApp = (phone: string) => {
-    Linking.openURL(`whatsapp://send?phone=591${phone}`);
-  };
+  const { property, loading, error, currentPhotoIndex, setCurrentPhotoIndex } =
+    usePropertyDetail(id);
+  const { goBack } = useNavigationHelper();
 
   if (loading) {
     return (
@@ -90,9 +43,9 @@ export default function PropertyDetailScreen() {
       <View className="flex-1 bg-white items-center justify-center px-4">
         <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
         <Text className="text-red-500 mt-4 text-center">{error}</Text>
-        <Pressable 
+        <Pressable
           className="mt-4 bg-primary px-6 py-3 rounded-lg"
-          onPress={() => router.back()}
+          onPress={goBack}
         >
           <Text className="text-white font-semibold">Volver</Text>
         </Pressable>
@@ -100,24 +53,27 @@ export default function PropertyDetailScreen() {
     );
   }
 
+  const statusColorClasses = getStatusColorClasses(property.status);
+  const translatedStatus = translateStatus(property.status);
+
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center">
-        <Pressable onPress={() => router.back()} className="mr-3">
+        <Pressable onPress={goBack} className="mr-3">
           <Ionicons name="arrow-back" size={24} color="white" />
         </Pressable>
-        <Text className="text-white font-semibold text-lg flex-1">Detalles de Propiedad</Text>
+        <Text className="text-white font-semibold text-lg flex-1">
+          Detalles de Propiedad
+        </Text>
         <Pressable>
           <Ionicons name="heart-outline" size={24} color="white" />
         </Pressable>
       </View>
 
       <ScrollView className="flex-1">
-        {/* Galería de Fotos */}
         {property.propertyPhotos && property.propertyPhotos.length > 0 ? (
           <View>
-            <Image 
+            <Image
               source={{ uri: property.propertyPhotos[currentPhotoIndex].url }}
               className="w-full h-64"
               resizeMode="cover"
@@ -130,20 +86,20 @@ export default function PropertyDetailScreen() {
               </View>
             )}
             {property.propertyPhotos.length > 1 && (
-              <ScrollView 
-                horizontal 
+              <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 className="absolute bottom-2 left-0 right-0"
                 contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
               >
                 {property.propertyPhotos.map((photo, index) => (
-                  <Pressable 
+                  <Pressable
                     key={photo.id}
                     onPress={() => setCurrentPhotoIndex(index)}
                   >
-                    <Image 
+                    <Image
                       source={{ uri: photo.url }}
-                      className={`w-16 h-16 rounded-lg ${index === currentPhotoIndex ? 'border-2 border-white' : ''}`}
+                      className={`w-16 h-16 rounded-lg ${index === currentPhotoIndex ? "border-2 border-white" : ""}`}
                     />
                   </Pressable>
                 ))}
@@ -157,29 +113,28 @@ export default function PropertyDetailScreen() {
         )}
 
         <View className="px-4 py-4">
-          {/* Precio y Tipo */}
           <View className="flex-row items-center justify-between mb-4">
             <View>
               <Text className="text-3xl font-bold text-gray-900">
-                Bs {parseFloat(property.price).toLocaleString('es-BO')}
+                {formatPrice(property.price)}
               </Text>
               <Text className="text-gray-500 mt-1">
-                {property.operationType === 'alquiler' ? 'por mes' : 'precio de venta'}
+                {getOperationTypeSuffix(property.operationType)}
               </Text>
             </View>
-            <View className={`px-4 py-2 rounded-full ${property.status === 'disponible' ? 'bg-green-100' : 'bg-red-100'}`}>
-              <Text className={`font-semibold ${property.status === 'disponible' ? 'text-green-700' : 'text-red-700'}`}>
-                {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
+            <View
+              className={`px-4 py-2 rounded-full ${statusColorClasses.containerClass}`}
+            >
+              <Text className={`font-semibold ${statusColorClasses.textClass}`}>
+                {translatedStatus}
               </Text>
             </View>
           </View>
 
-          {/* Título */}
           <Text className="text-2xl font-bold text-gray-900 mb-2">
             {property.title}
           </Text>
 
-          {/* Ubicación */}
           <View className="flex-row items-center mb-4">
             <Ionicons name="location" size={20} color="#D65E48" />
             <Text className="text-gray-600 ml-2">
@@ -187,37 +142,46 @@ export default function PropertyDetailScreen() {
             </Text>
           </View>
 
-          {/* Características */}
           <View className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-4">
             <View className="flex-1 items-center border-r border-gray-200">
               <Ionicons name="bed-outline" size={24} color="#D65E48" />
-              <Text className="text-gray-900 font-semibold mt-1">{property.bedrooms}</Text>
+              <Text className="text-gray-900 font-semibold mt-1">
+                {property.bedrooms}
+              </Text>
               <Text className="text-gray-500 text-xs">Dormitorios</Text>
             </View>
             <View className="flex-1 items-center border-r border-gray-200">
               <Ionicons name="water-outline" size={24} color="#D65E48" />
-              <Text className="text-gray-900 font-semibold mt-1">{property.bathrooms}</Text>
+              <Text className="text-gray-900 font-semibold mt-1">
+                {property.bathrooms}
+              </Text>
               <Text className="text-gray-500 text-xs">Baños</Text>
             </View>
             <View className="flex-1 items-center">
               <Ionicons name="resize-outline" size={24} color="#D65E48" />
-              <Text className="text-gray-900 font-semibold mt-1">{property.areaM2}</Text>
+              <Text className="text-gray-900 font-semibold mt-1">
+                {property.areaM2}
+              </Text>
               <Text className="text-gray-500 text-xs">m²</Text>
             </View>
           </View>
 
-          {/* Descripción */}
           <View className="mb-4">
-            <Text className="text-lg font-semibold text-gray-900 mb-2">Descripción</Text>
-            <Text className="text-gray-600 leading-6">{property.description}</Text>
+            <Text className="text-lg font-semibold text-gray-900 mb-2">
+              Descripción
+            </Text>
+            <Text className="text-gray-600 leading-6">
+              {property.description}
+            </Text>
           </View>
 
-          {/* Información del Propietario */}
           <View className="bg-gray-50 rounded-xl p-4 mb-4">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Propietario</Text>
+            <Text className="text-lg font-semibold text-gray-900 mb-3">
+              Propietario
+            </Text>
             <View className="flex-row items-center">
               {property.owner.profilePhoto ? (
-                <Image 
+                <Image
                   source={{ uri: property.owner.profilePhoto }}
                   className="w-12 h-12 rounded-full"
                 />
@@ -229,15 +193,18 @@ export default function PropertyDetailScreen() {
                 </View>
               )}
               <View className="ml-3 flex-1">
-                <Text className="text-gray-900 font-semibold">{property.owner.fullName}</Text>
-                <Text className="text-gray-500 text-sm">{property.owner.email}</Text>
+                <Text className="text-gray-900 font-semibold">
+                  {property.owner.fullName}
+                </Text>
+                <Text className="text-gray-500 text-sm">
+                  {property.owner.email}
+                </Text>
               </View>
             </View>
           </View>
 
-          {/* Botones de Contacto */}
           <View className="gap-3 mb-6">
-            <Pressable 
+            <Pressable
               className="bg-primary rounded-xl py-4 flex-row items-center justify-center"
               onPress={() => handleCall(property.owner.phone)}
             >
@@ -246,7 +213,7 @@ export default function PropertyDetailScreen() {
             </Pressable>
 
             <View className="flex-row gap-3">
-              <Pressable 
+              <Pressable
                 className="flex-1 bg-green-500 rounded-xl py-4 flex-row items-center justify-center"
                 onPress={() => handleWhatsApp(property.owner.phone)}
               >
@@ -254,7 +221,7 @@ export default function PropertyDetailScreen() {
                 <Text className="text-white font-semibold ml-2">WhatsApp</Text>
               </Pressable>
 
-              <Pressable 
+              <Pressable
                 className="flex-1 bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
                 onPress={() => handleEmail(property.owner.email)}
               >
