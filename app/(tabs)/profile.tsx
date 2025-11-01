@@ -1,47 +1,63 @@
-import React from 'react';
-import { View, Text, Switch, Pressable, Alert, Image, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useMode } from '@/context/ModeContext';
-import { useAuth } from '@/hooks/auth/use-auth';
-import { useUserProfile } from '@/context/UserProfileContext';
-import { useProfileImage } from '@/hooks/profile/use-profile-image';
-import { router } from 'expo-router';
+import React from "react";
+import {
+  View,
+  Text,
+  Switch,
+  Pressable,
+  Alert,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useMode } from "@/context/ModeContext";
+import { useAuth } from "@/hooks/auth/use-auth";
+import { useUserProfile } from "@/context/UserProfileContext";
+import { useProfileImage } from "@/hooks/profile/use-profile-image";
+import { router } from "expo-router";
 
 export default function ProfileScreen() {
   const { mode, toggle } = useMode();
   const { user, logout } = useAuth();
   const { profile, loading } = useUserProfile();
   const { uploading, selectImageSource } = useProfileImage();
-  const isOwner = mode === 'owner';
+  const isOwner = mode === "owner";
 
   const onToggle = () => {
     toggle();
-    (router as any).replace('/(tabs)');
+    if (mode === "user") {
+      router.push("/(tabs)/properties");
+    } else {
+      router.push("/(tabs)");
+    }
   };
 
   const handleSignOut = () => {
     Alert.alert(
-      'Cerrar sesión',
-      '¿Estás seguro de que quieres cerrar sesión?',
+      "Cerrar sesión",
+      "¿Estás seguro de que quieres cerrar sesión?",
       [
         {
-          text: 'Cancelar',
-          style: 'cancel',
+          text: "Cancelar",
+          style: "cancel",
         },
         {
-          text: 'Cerrar sesión',
-          style: 'destructive',
+          text: "Cerrar sesión",
+          style: "destructive",
           onPress: async () => {
             try {
               await logout();
-              router.replace('/');
             } catch (error) {
-              console.error('Error signing out:', error);
-              Alert.alert('Error', 'No se pudo cerrar la sesión');
+              console.error("Error signing out:", error);
+              Alert.alert("Error", "Hubo un problema al cerrar sesión", [
+                {
+                  text: "OK",
+                  onPress: () => router.replace("/"),
+                },
+              ]);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -54,7 +70,7 @@ export default function ProfileScreen() {
 
       {loading && !profile ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color="#D65E48" />
         </View>
       ) : (
         <View className="px-4 py-5">
@@ -64,13 +80,13 @@ export default function ProfileScreen() {
                 {uploading ? (
                   <ActivityIndicator size="small" />
                 ) : profile?.profilePhoto ? (
-                  <Image 
-                    source={{ uri: profile.profilePhoto }} 
+                  <Image
+                    source={{ uri: profile.profilePhoto }}
                     className="w-full h-full"
                   />
                 ) : (
                   <Text className="text-gray-600 font-semibold">
-                    {profile?.fullName?.charAt(0).toUpperCase() || 'U'}
+                    {profile?.fullName?.charAt(0).toUpperCase() || "U"}
                   </Text>
                 )}
               </View>
@@ -80,10 +96,10 @@ export default function ProfileScreen() {
             </Pressable>
             <View>
               <Text className="text-base font-semibold">
-                {profile?.fullName || user?.fullName || 'Usuario'}
+                {profile?.fullName || user?.fullName || "Usuario"}
               </Text>
               <Text className="text-gray-500 text-xs">
-                {profile?.email || user?.email || 'email@ejemplo.com'}
+                {profile?.email || user?.email || "email@ejemplo.com"}
               </Text>
             </View>
           </View>
@@ -92,22 +108,28 @@ export default function ProfileScreen() {
             <Text className="text-gray-600 text-sm mb-2">Modo de usuario</Text>
             <View className="flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
               <View className="flex-row items-center gap-2">
-                <Ionicons name="person-circle-outline" size={18} color="#11181C" />
-                <Text className="font-medium">{isOwner ? 'Propietario' : 'Usuario'}</Text>
+                <Ionicons
+                  name="person-circle-outline"
+                  size={18}
+                  color="#11181C"
+                />
+                <Text className="font-medium">
+                  {isOwner ? "Propietario" : "Usuario"}
+                </Text>
               </View>
               <Switch value={isOwner} onValueChange={onToggle} />
             </View>
             <Text className="text-gray-500 text-xs mt-2">
               {isOwner
-                ? 'Puedes publicar y administrar tus propiedades.'
-                : 'Puedes buscar y contactar propietarios.'}
+                ? "Puedes publicar y administrar tus propiedades."
+                : "Puedes buscar y contactar propietarios."}
             </Text>
           </View>
 
           <View className="mt-6 gap-3">
-            <Pressable 
+            <Pressable
               className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3"
-              onPress={() => router.push('/settings')}
+              onPress={() => router.push("/settings")}
             >
               <View className="flex-row items-center gap-2">
                 <Ionicons name="create-outline" size={18} />
@@ -125,8 +147,8 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          <Pressable 
-            className="mt-8 border border-gray-300 rounded-xl py-3 items-center" 
+          <Pressable
+            className="mt-8 border border-gray-300 rounded-xl py-3 items-center"
             onPress={handleSignOut}
           >
             <Text className="font-semibold">Cerrar sesión</Text>

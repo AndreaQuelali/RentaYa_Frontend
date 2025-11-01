@@ -1,29 +1,8 @@
 import { View, Text, Pressable } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import Logo from '@/assets/logo';
-import { useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
 
 export default function WelcomeScreen() {
-  const { user, loading } = useAuth();
-
-  useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.replace('/(tabs)');
-      }
-    }
-  }, [user, loading]);
-
-  if (loading) {
-    return (
-      <View className="flex-1 bg-primary items-center justify-center">
-        <Logo/>
-        <Text className="text-white mt-4">Cargando...</Text>
-      </View>
-    );
-  }
-
   return (
     <View className="flex-1 bg-primary">
       <View className="flex-1 items-center justify-center">

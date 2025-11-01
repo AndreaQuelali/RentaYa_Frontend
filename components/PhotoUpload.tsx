@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, Image, FlatList, ActivityIndicator, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  FlatList,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
 export interface PhotoUrlPickerProps {
   value: string[];
@@ -13,29 +20,33 @@ async function uploadToCloudinary(localUri: string): Promise<string> {
   const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const unsignedPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
   if (!cloudName || !unsignedPreset) {
-    throw new Error('Faltan variables EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME o EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET');
+    throw new Error(
+      "Faltan variables EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME o EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET",
+    );
   }
 
-  const uriParts = localUri.split('.')
+  const uriParts = localUri.split(".");
   const fileType = uriParts[uriParts.length - 1];
 
   const formData: any = new FormData();
-  formData.append('file', {
+  formData.append("file", {
     // @ts-ignore RN FormData file
     uri: localUri,
     type: `image/${fileType}`,
     name: `upload.${fileType}`,
   });
-  formData.append('upload_preset', String(unsignedPreset));
+  formData.append("upload_preset", String(unsignedPreset));
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
-    method: 'POST',
-    body: formData,
-    headers: {
-      'Accept': 'application/json',
-      // 'Content-Type' is set automatically by fetch for multipart/form-data in RN
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+    {
+      method: "POST",
+      body: formData,
+      headers: {
+        Accept: "application/json",
+      },
     },
-  });
+  );
 
   if (!res.ok) {
     const text = await res.text();
@@ -45,14 +56,17 @@ async function uploadToCloudinary(localUri: string): Promise<string> {
   return data.secure_url as string;
 }
 
-export default function PhotoUrlPicker({ value, onChange, title = 'Fotos' }: PhotoUrlPickerProps) {
+export default function PhotoUrlPicker({
+  value,
+  onChange,
+  title = "Fotos",
+}: PhotoUrlPickerProps) {
   const [uploading, setUploading] = useState(false);
 
   const pickImages = async () => {
-    // Solicitar permisos
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted') {
-      alert('Se requiere permiso para acceder a la galería.');
+    if (perm.status !== "granted") {
+      alert("Se requiere permiso para acceder a la galería.");
       return;
     }
 
@@ -60,7 +74,7 @@ export default function PhotoUrlPicker({ value, onChange, title = 'Fotos' }: Pho
       allowsEditing: false,
       quality: 0.8,
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      selectionLimit: 0, // 0 == ilimitado en SDK 50+, múltiple
+      selectionLimit: 0,
       allowsMultipleSelection: true,
     });
 
@@ -68,7 +82,7 @@ export default function PhotoUrlPicker({ value, onChange, title = 'Fotos' }: Pho
 
     try {
       setUploading(true);
-      const selected = (result.assets || []).map(a => a.uri);
+      const selected = (result.assets || []).map((a) => a.uri);
       const uploads = [] as Promise<string>[];
       for (const uri of selected) {
         uploads.push(uploadToCloudinary(uri));
@@ -76,7 +90,7 @@ export default function PhotoUrlPicker({ value, onChange, title = 'Fotos' }: Pho
       const urls = await Promise.all(uploads);
       onChange([...(value || []), ...urls]);
     } catch (e: any) {
-      alert(e?.message || 'No se pudieron subir las imágenes');
+      alert(e?.message || "No se pudieron subir las imágenes");
     } finally {
       setUploading(false);
     }
@@ -94,9 +108,15 @@ export default function PhotoUrlPicker({ value, onChange, title = 'Fotos' }: Pho
 
       <View className="border border-gray-200 rounded-xl px-4 py-4 items-center justify-center">
         <Ionicons name="cloud-upload-outline" size={28} color="#6B7280" />
-        <Text className="text-gray-500 text-xs mt-2 text-center">Toca para seleccionar desde tu galería</Text>
-        <Pressable className="mt-3 border border-gray-300 rounded-lg px-3 py-2" onPress={pickImages} disabled={uploading}>
-          <Text>{uploading ? 'Subiendo...' : 'Seleccionar fotos'}</Text>
+        <Text className="text-gray-500 text-xs mt-2 text-center">
+          Toca para seleccionar desde tu galería
+        </Text>
+        <Pressable
+          className="mt-3 border border-gray-300 rounded-lg px-3 py-2"
+          onPress={pickImages}
+          disabled={uploading}
+        >
+          <Text>{uploading ? "Subiendo..." : "Seleccionar fotos"}</Text>
         </Pressable>
       </View>
 
