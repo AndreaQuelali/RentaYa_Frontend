@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import PropertyCard from "@/components/PropertyCard";
 import { router, useFocusEffect } from "expo-router";
 import SearchBar from "@/components/SearchBar";
+import FilterModal, { FilterValues } from "@/components/FilterModal";
 
 interface Property {
   id: string;
@@ -24,10 +25,10 @@ interface Property {
   areaM2?: number;
   price: number;
   operationType: string;
-  propertyPhotos?: Array<{
+  propertyPhotos?: {
     id: string;
     url: string;
-  }>;
+  }[];
 }
 
 export default function HomeScreen() {
@@ -36,11 +37,13 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<FilterValues>({});
 
   useFocusEffect(
     React.useCallback(() => {
       fetchData();
-    }, []),
+    }, [])
   );
 
   const fetchData = async () => {
@@ -60,18 +63,62 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    if (searchQuery.trim() === "") {
+    if (searchQuery.trim() === "" && Object.keys(filters).length === 0) {
       setFilteredItems(items);
     } else {
-      const filtered = items.filter(
-        (property) =>
-          property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          property.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          property.address.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
+      let filtered = items;
+
+      // Filtro de búsqueda por texto
+      if (searchQuery.trim() !== "") {
+        filtered = filtered.filter(
+          (property) =>
+            property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.address.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // Filtro por provincia
+      if (filters.provincia) {
+        filtered = filtered.filter(
+          (property) =>
+            property.city?.toLowerCase() === filters.provincia?.toLowerCase()
+        );
+      }
+
+      // Filtro por tipo de propiedad
+      if (filters.tipoPropiedad) {
+        filtered = filtered.filter((property) =>
+          property.title.includes(filters.tipoPropiedad!)
+        );
+      }
+
+      // Filtro por modalidad
+      if (filters.modalidad) {
+        const modalidadMap: { [key: string]: string } = {
+          Alquiler: "RENT",
+          Venta: "SALE",
+          Anticrético: "ANTICRETICO",
+        };
+        const operationType = modalidadMap[filters.modalidad];
+        if (operationType) {
+          filtered = filtered.filter(
+            (property) => property.operationType === operationType
+          );
+        }
+      }
+
+      // Filtro por precio
+      if (filters.precio) {
+        const price = parseFloat(filters.precio);
+        if (!isNaN(price)) {
+          filtered = filtered.filter((property) => property.price <= price);
+        }
+      }
+
       setFilteredItems(filtered);
     }
-  }, [searchQuery, items]);
+  }, [searchQuery, items, filters]);
 
   const handlePropertyPress = (propertyId: string) => {
     router.push(`/property/${propertyId}`);
@@ -102,9 +149,16 @@ export default function HomeScreen() {
             <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
-              onFilterPress={() => {}}
+              onFilterPress={() => setShowFilterModal(true)}
             />
           </View>
+
+          <FilterModal
+            visible={showFilterModal}
+            onClose={() => setShowFilterModal(false)}
+            onApplyFilters={setFilters}
+            initialFilters={filters}
+          />
 
           {loading && (
             <View className="mt-6 items-center justify-center">
