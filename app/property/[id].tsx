@@ -1,33 +1,35 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
   ScrollView,
-  Image,
-  ActivityIndicator,
   Pressable,
+  Image,
+  Dimensions,
+  ActivityIndicator,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigationHelper } from "@/hooks/useNavigationHelper";
 import { usePropertyDetail } from "@/hooks/properties/usePropertyDetail";
-import {
-  translateStatus,
-  getOperationTypeSuffix,
-  formatPrice,
-  getStatusColorClasses,
-} from "@/utils/propertyHelpers";
-import {
-  handleCall,
-  handleEmail,
-  handleWhatsApp,
-} from "@/utils/contactHelpers";
+import { formatPrice } from "@/utils/propertyHelpers";
+import { handleWhatsApp } from "@/utils/contactHelpers";
+
+const { width } = Dimensions.get("window");
+const galleryHeight = 220;
 
 export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { property, loading, error, currentPhotoIndex, setCurrentPhotoIndex } =
-    usePropertyDetail(id);
-  const { goBack } = useNavigationHelper();
+  const router = useRouter();
+  const { property, loading, error } = usePropertyDetail(id);
+
+  const photos: string[] = useMemo(() => {
+    return (property?.propertyPhotos || [])
+      .map((f: any) => f.url)
+      .filter(Boolean);
+  }, [property]);
+
+  const priceText = property?.price ? formatPrice(property.price) : "—";
+  const tipoText = property?.operationType;
 
   if (loading) {
     return (
@@ -45,7 +47,7 @@ export default function PropertyDetailScreen() {
         <Text className="text-red-500 mt-4 text-center">{error}</Text>
         <Pressable
           className="mt-4 bg-primary px-6 py-3 rounded-lg"
-          onPress={goBack}
+          onPress={() => router.back()}
         >
           <Text className="text-white font-semibold">Volver</Text>
         </Pressable>
@@ -53,183 +55,171 @@ export default function PropertyDetailScreen() {
     );
   }
 
-  const statusColorClasses = getStatusColorClasses(property.status);
-  const translatedStatus = translateStatus(property.status);
-
   return (
     <View className="flex-1 bg-white">
-      <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center">
-        <Pressable onPress={goBack} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="white" />
+      {/* Header with back */}
+      <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center justify-between">
+        <Pressable
+          onPress={() => router.back()}
+          className="p-1 rounded-full bg-white/10"
+        >
+          <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
-        <Text className="text-white font-semibold text-lg flex-1">
-          Detalles de Propiedad
-        </Text>
-        <Pressable>
-          <Ionicons name="heart-outline" size={24} color="white" />
+        <Pressable className="p-1">
+          <Ionicons name="heart-outline" size={24} color="#fff" />
         </Pressable>
       </View>
 
-      <ScrollView className="flex-1">
-        {property.propertyPhotos && property.propertyPhotos.length > 0 ? (
-          <View>
-            <Image
-              source={{ uri: property.propertyPhotos[currentPhotoIndex].url }}
-              className="w-full h-64"
-              resizeMode="cover"
-            />
-            {property.propertyPhotos.length > 1 && (
-              <View className="absolute bottom-4 right-4 bg-black/50 px-3 py-1 rounded-full">
-                <Text className="text-white text-xs">
-                  {currentPhotoIndex + 1} / {property.propertyPhotos.length}
-                </Text>
-              </View>
-            )}
-            {property.propertyPhotos.length > 1 && (
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
+        <View className="px-4 pt-4">
+          {/* Gallery */}
+          <View
+            className="rounded-xl overflow-hidden bg-gray-100"
+            style={{ height: galleryHeight }}
+          >
+            {photos.length > 0 ? (
               <ScrollView
                 horizontal
+                pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                className="absolute bottom-2 left-0 right-0"
-                contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+                style={{ width }}
               >
-                {property.propertyPhotos.map((photo, index) => (
-                  <Pressable
-                    key={photo.id}
-                    onPress={() => setCurrentPhotoIndex(index)}
-                  >
-                    <Image
-                      source={{ uri: photo.url }}
-                      className={`w-16 h-16 rounded-lg ${index === currentPhotoIndex ? "border-2 border-white" : ""}`}
-                    />
-                  </Pressable>
+                {photos.map((uri, idx) => (
+                  <Image
+                    key={`${uri}-${idx}`}
+                    source={{ uri }}
+                    style={{ width, height: galleryHeight }}
+                    resizeMode="cover"
+                  />
                 ))}
               </ScrollView>
+            ) : (
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-gray-500">
+                  Galería de imágenes de la propiedad
+                </Text>
+              </View>
+            )}
+            {/* Badge tipo operación */}
+            {tipoText && (
+              <View className="absolute top-3 left-3">
+                <Text className="text-xs px-2 py-1 bg-red-500 text-white rounded-md font-semibold">
+                  {tipoText}
+                </Text>
+              </View>
             )}
           </View>
-        ) : (
-          <View className="w-full h-64 bg-gray-200 items-center justify-center">
-            <Ionicons name="image-outline" size={64} color="#9CA3AF" />
-          </View>
-        )}
 
-        <View className="px-4 py-4">
-          <View className="flex-row items-center justify-between mb-4">
-            <View>
-              <Text className="text-3xl font-bold text-gray-900">
-                {formatPrice(property.price)}
+          {/* Title + Price */}
+          <View className="flex-row items-start justify-between mt-4">
+            <View className="flex-1 pr-2">
+              <Text className="text-xl font-bold" numberOfLines={2}>
+                {property.title || "—"}
               </Text>
-              <Text className="text-gray-500 mt-1">
-                {getOperationTypeSuffix(property.operationType)}
-              </Text>
-            </View>
-            <View
-              className={`px-4 py-2 rounded-full ${statusColorClasses.containerClass}`}
-            >
-              <Text className={`font-semibold ${statusColorClasses.textClass}`}>
-                {translatedStatus}
-              </Text>
-            </View>
-          </View>
-
-          <Text className="text-2xl font-bold text-gray-900 mb-2">
-            {property.title}
-          </Text>
-
-          <View className="flex-row items-center mb-4">
-            <Ionicons name="location" size={20} color="#D65E48" />
-            <Text className="text-gray-600 ml-2">
-              {property.address}, {property.city}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-4">
-            <View className="flex-1 items-center border-r border-gray-200">
-              <Ionicons name="bed-outline" size={24} color="#D65E48" />
-              <Text className="text-gray-900 font-semibold mt-1">
-                {property.bedrooms}
-              </Text>
-              <Text className="text-gray-500 text-xs">Dormitorios</Text>
-            </View>
-            <View className="flex-1 items-center border-r border-gray-200">
-              <Ionicons name="water-outline" size={24} color="#D65E48" />
-              <Text className="text-gray-900 font-semibold mt-1">
-                {property.bathrooms}
-              </Text>
-              <Text className="text-gray-500 text-xs">Baños</Text>
-            </View>
-            <View className="flex-1 items-center">
-              <Ionicons name="resize-outline" size={24} color="#D65E48" />
-              <Text className="text-gray-900 font-semibold mt-1">
-                {property.areaM2}
-              </Text>
-              <Text className="text-gray-500 text-xs">m²</Text>
-            </View>
-          </View>
-
-          <View className="mb-4">
-            <Text className="text-lg font-semibold text-gray-900 mb-2">
-              Descripción
-            </Text>
-            <Text className="text-gray-600 leading-6">
-              {property.description}
-            </Text>
-          </View>
-
-          <View className="bg-gray-50 rounded-xl p-4 mb-4">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">
-              Propietario
-            </Text>
-            <View className="flex-row items-center">
-              {property.owner.profilePhoto ? (
-                <Image
-                  source={{ uri: property.owner.profilePhoto }}
-                  className="w-12 h-12 rounded-full"
-                />
-              ) : (
-                <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
-                  <Text className="text-white font-bold text-lg">
-                    {property.owner.fullName.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-              <View className="ml-3 flex-1">
-                <Text className="text-gray-900 font-semibold">
-                  {property.owner.fullName}
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  {property.owner.email}
+              <View className="flex-row items-center mt-2">
+                <Ionicons name="location" size={18} color="#D65E48" />
+                <Text
+                  className="text-base text-gray-600 ml-1"
+                  numberOfLines={1}
+                >
+                  {property.city || "—"}
                 </Text>
               </View>
             </View>
-          </View>
-
-          <View className="gap-3 mb-6">
-            <Pressable
-              className="bg-primary rounded-xl py-4 flex-row items-center justify-center"
-              onPress={() => handleCall(property.owner.phone)}
-            >
-              <Ionicons name="call" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">Llamar</Text>
-            </Pressable>
-
-            <View className="flex-row gap-3">
-              <Pressable
-                className="flex-1 bg-green-500 rounded-xl py-4 flex-row items-center justify-center"
-                onPress={() => handleWhatsApp(property.owner.phone)}
-              >
-                <Ionicons name="logo-whatsapp" size={20} color="white" />
-                <Text className="text-white font-semibold ml-2">WhatsApp</Text>
-              </Pressable>
-
-              <Pressable
-                className="flex-1 bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
-                onPress={() => handleEmail(property.owner.email)}
-              >
-                <Ionicons name="mail" size={20} color="white" />
-                <Text className="text-white font-semibold ml-2">Email</Text>
-              </Pressable>
+            <View className="items-end">
+              <Text className="text-2xl font-bold text-red-500">
+                {priceText}
+              </Text>
+              <Text className="text-sm text-gray-500">/mes</Text>
             </View>
           </View>
+
+          {/* Description */}
+          <View className="mt-4">
+            <Text className="text-base font-bold mb-2">Descripción</Text>
+            <Text className="text-base text-gray-700 leading-6">
+              {property.description || "Sin descripción"}
+            </Text>
+          </View>
+
+          {/* Map placeholder */}
+          <View className="mt-4">
+            <Text className="text-base font-bold mb-2">Ubicación</Text>
+            <View className="h-28 bg-gray-200 rounded-xl items-center justify-center">
+              <Text className="text-base text-gray-600">
+                Mapa interactivo de la propiedad
+              </Text>
+            </View>
+          </View>
+
+          {/* Owner info */}
+          <View className="mt-6">
+            <Text className="text-base font-bold mb-3">
+              Información del propietario
+            </Text>
+            <View className="bg-gray-50 rounded-xl p-4">
+              <View className="flex-row items-center gap-3 mb-3">
+                <View className="w-10 h-10 rounded-full bg-primary items-center justify-center">
+                  <Ionicons name="person" size={20} color="#fff" />
+                </View>
+                <Text className="text-base font-medium flex-1">
+                  {property.owner.fullName}
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-3">
+                <View className="w-10 h-10 rounded-full bg-green-100 items-center justify-center">
+                  <Ionicons name="call" size={20} color="#059669" />
+                </View>
+                <Text className="text-base text-gray-700">
+                  {property.owner.phone}
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              className="bg-black rounded-xl py-4 items-center mt-4"
+              onPress={() => handleWhatsApp(property.owner.phone)}
+            >
+              <Text className="text-white font-semibold text-base">
+                Enviar mensaje
+              </Text>
+            </Pressable>
+            <Pressable className="border border-gray-300 rounded-xl py-4 items-center mt-2">
+              <Text className="text-black font-semibold text-base">
+                Calificar propiedad
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Reviews (estático) */}
+          {/* <View className="mt-6">
+            <Text className="text-sm font-semibold mb-2">Reseñas</Text>
+            <View className="flex-row items-start gap-3 mb-3">
+              <View className="w-8 h-8 rounded-full bg-purple-200 items-center justify-center">
+                <Text className="text-purple-700 font-semibold">A</Text>
+              </View>
+              <View className="flex-1 border-b border-gray-200 pb-3">
+                <Text className="text-xs font-semibold">Usuario demo 1</Text>
+                <Text className="text-xs text-gray-600">
+                  Muy buen lugar, zona tranquila con acceso a supermercados...
+                </Text>
+              </View>
+            </View>
+            <View className="flex-row items-start gap-3">
+              <View className="w-8 h-8 rounded-full bg-purple-200 items-center justify-center">
+                <Text className="text-purple-700 font-semibold">A</Text>
+              </View>
+              <View className="flex-1 border-b border-gray-200 pb-3">
+                <Text className="text-xs font-semibold">Usuario demo 2</Text>
+                <Text className="text-xs text-gray-600">
+                  Muy buen lugar, zona tranquila con acceso a supermercados...
+                </Text>
+              </View>
+            </View>
+          </View> */}
         </View>
       </ScrollView>
     </View>
