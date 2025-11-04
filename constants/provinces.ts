@@ -1,0 +1,18 @@
+export const PROVINCIAS = [
+  "Arani",
+  "Esteban Arze",
+  "Arque",
+  "Ayopaya",
+  "Campero",
+  "Capinota",
+  "Cercado",
+  "Carrasco",
+  "Chapare",
+  "Germán Jordán",
+  "Mizque",
+  "Punata",
+  "Quillacollo",
+  "Tapacarí",
+  "Bolívar",
+  "Tiraque",
+];

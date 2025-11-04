@@ -6,6 +6,7 @@ import { FormField } from "./property-form/FormField";
 import { SelectField } from "./property-form/SelectField";
 import { PROPERTY_TYPES, OPERATION_MODES } from "@/constants/propertyOptions";
 import { UserProperty } from "@/types/property";
+import { PROVINCIAS } from "@/constants/provinces";
 
 interface NewPropertyFormProps {
   propertyToEdit?: UserProperty | null;
@@ -23,6 +24,7 @@ export default function NewPropertyForm({
 
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [showModePicker, setShowModePicker] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
 
   return (
     <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
@@ -39,12 +41,14 @@ export default function NewPropertyForm({
             onChangeText={(text) => updateField("title", text)}
           />
 
-          <FormField
-            label="Ciudad"
-            placeholder="Ciudad"
-            icon="location-outline"
+          <SelectField
+            label="Provincia"
+            placeholder="Seleccione la provincia"
             value={formData.city}
-            onChangeText={(text) => updateField("city", text)}
+            options={[...PROVINCIAS]}
+            isOpen={showCityPicker}
+            onToggle={() => setShowCityPicker((prev) => !prev)}
+            onSelect={(value) => updateField("city", value)}
           />
 
           <View>
