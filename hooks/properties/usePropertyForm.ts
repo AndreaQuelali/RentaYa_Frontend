@@ -13,6 +13,8 @@ interface PropertyFormData {
   address: string;
   area: string;
   photos: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 interface UsePropertyFormProps {
@@ -56,6 +58,8 @@ export const usePropertyForm = ({
     address: "",
     area: "",
     photos: [],
+    latitude: undefined,
+    longitude: undefined,
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -75,6 +79,8 @@ export const usePropertyForm = ({
         address: propertyToEdit.address,
         area: propertyToEdit.areaM2 || "",
         photos: photos,
+        latitude: propertyToEdit.latitude || undefined,
+        longitude: propertyToEdit.longitude || undefined,
       });
       setOriginalPhotos(photos);
     }
@@ -82,7 +88,7 @@ export const usePropertyForm = ({
 
   const updateField = <K extends keyof PropertyFormData>(
     field: K,
-    value: PropertyFormData[K],
+    value: PropertyFormData[K]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -102,7 +108,7 @@ export const usePropertyForm = ({
     if (!tipoOperacion) {
       Alert.alert(
         "Modalidad inválida",
-        "Selecciona Alquiler, Venta o Anticrético",
+        "Selecciona Alquiler, Venta o Anticrético"
       );
       return false;
     }
@@ -126,6 +132,8 @@ export const usePropertyForm = ({
       address: "",
       area: "",
       photos: [],
+      latitude: undefined,
+      longitude: undefined,
     });
     setOriginalPhotos([]);
   };
@@ -157,14 +165,16 @@ export const usePropertyForm = ({
           areaM2: areaM2,
           price: Number(formData.price),
           operationType: tipoOperacion,
+          latitude: formData.latitude || null,
+          longitude: formData.longitude || null,
         };
 
         const currentPhotos = formData.photos || [];
         const photosToRemove = originalPhotos.filter(
-          (url) => !currentPhotos.includes(url),
+          (url) => !currentPhotos.includes(url)
         );
         const photosToAdd = currentPhotos.filter(
-          (url) => !originalPhotos.includes(url),
+          (url) => !originalPhotos.includes(url)
         );
 
         if (photosToRemove.length > 0) {
@@ -203,6 +213,11 @@ export const usePropertyForm = ({
         formDataToSend.append("price", formData.price);
         formDataToSend.append("operationType", tipoOperacion);
 
+        if (formData.latitude && formData.longitude) {
+          formDataToSend.append("latitude", formData.latitude.toString());
+          formDataToSend.append("longitude", formData.longitude.toString());
+        }
+
         if (formData.photos && formData.photos.length > 0) {
           formData.photos.forEach((photoUrl, index) => {
             formDataToSend.append(`photos[${index}]`, photoUrl);
@@ -220,7 +235,7 @@ export const usePropertyForm = ({
         "Éxito",
         propertyToEdit
           ? "Propiedad actualizada correctamente"
-          : "Propiedad publicada correctamente",
+          : "Propiedad publicada correctamente"
       );
 
       resetForm();

@@ -14,6 +14,12 @@ import { usePropertyDetail } from "@/hooks/properties/usePropertyDetail";
 import { formatPrice } from "@/utils/propertyHelpers";
 import RatingModal from "@/components/RatingModal";
 import ConsultaModal from "@/components/ConsultaModal";
+import PropertyMap from "@/components/PropertyMap";
+import {
+  handleCall,
+  handleEmail,
+  handleWhatsApp,
+} from "@/utils/contactHelpers";
 
 const { width } = Dimensions.get("window");
 const galleryHeight = 220;
@@ -163,37 +169,44 @@ export default function PropertyDetailScreen() {
             </Text>
           </View>
 
-          {/* Map placeholder */}
-          <View className="mt-4">
-            <Text className="text-base font-bold mb-2">Ubicación</Text>
-            <View className="h-28 bg-gray-200 rounded-xl items-center justify-center">
-              <Text className="text-base text-gray-600">
-                Mapa interactivo de la propiedad
-              </Text>
-            </View>
-          </View>
+          {/* Map */}
+          <PropertyMap
+            latitude={property.latitude}
+            longitude={property.longitude}
+            address={property.address}
+            city={property.city}
+          />
 
           {/* Owner info */}
           <View className="mt-6">
             <Text className="text-base font-bold mb-3">
               Información del propietario
             </Text>
-            <View className="bg-gray-50 rounded-xl p-4">
-              <View className="flex-row items-center gap-3 mb-3">
-                <View className="w-10 h-10 rounded-full bg-primary items-center justify-center">
-                  <Ionicons name="person" size={20} color="#fff" />
-                </View>
-                <Text className="text-base font-medium flex-1">
-                  {property.owner.fullName}
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-3">
-                <View className="w-10 h-10 rounded-full bg-green-100 items-center justify-center">
-                  <Ionicons name="call" size={20} color="#059669" />
-                </View>
-                <Text className="text-base text-gray-700">
-                  {property.owner.phone}
-                </Text>
+            <View className="gap-3 mb-6">
+              <Pressable
+                className="bg-primary rounded-xl py-4 flex-row items-center justify-center"
+                onPress={() => handleCall(property.owner.phone)}
+              >
+                <Ionicons name="call" size={20} color="white" />
+                <Text className="text-white font-semibold ml-2">Llamar</Text>
+              </Pressable>
+              <View className="flex-row gap-3">
+                <Pressable
+                  className="flex-1 bg-green-500 rounded-xl py-4 flex-row items-center justify-center"
+                  onPress={() => handleWhatsApp(property.owner.phone)}
+                >
+                  <Ionicons name="logo-whatsapp" size={20} color="white" />
+                  <Text className="text-white font-semibold ml-2">
+                    WhatsApp
+                  </Text>
+                </Pressable>
+                <Pressable
+                  className="flex-1 bg-blue-500 rounded-xl py-4 flex-row items-center justify-center"
+                  onPress={() => handleEmail(property.owner.email)}
+                >
+                  <Ionicons name="mail" size={20} color="white" />
+                  <Text className="text-white font-semibold ml-2">Email</Text>
+                </Pressable>
               </View>
             </View>
 

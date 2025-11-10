@@ -163,7 +163,9 @@ export default function HomeScreen() {
           {loading && (
             <View className="mt-6 items-center justify-center">
               <ActivityIndicator size="large" color="#D65E48" />
-              <Text className="text-gray-500 mt-2">Cargando inmuebles...</Text>
+              <Text className="text-gray-500 mt-2">
+                Cargando propiedades...
+              </Text>
             </View>
           )}
 
