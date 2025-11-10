@@ -25,6 +25,8 @@ export interface Property {
   bathrooms: number;
   areaM2: string;
   price: string;
+  latitude?: number | null;
+  longitude?: number | null;
   operationType: string;
   status: string;
   createdAt: any;

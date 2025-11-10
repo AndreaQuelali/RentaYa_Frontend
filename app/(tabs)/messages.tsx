@@ -14,7 +14,7 @@ const MENSAJES_MOCK = [
     message:
       "¿Está disponible para visitar el departamento este fin de semana?",
     date: "2025-11-04T10:30:00",
-    status: "enviado", // enviado, leído, respondido
+    status: "enviado", // enviado, respondido
   },
   {
     id: "2",
@@ -25,7 +25,7 @@ const MENSAJES_MOCK = [
     message:
       "Me interesa mucho la propiedad. ¿Cuál es el precio de alquiler mensual y qué servicios incluye?",
     date: "2025-11-03T15:20:00",
-    status: "leído",
+    status: "respondido",
   },
   {
     id: "3",

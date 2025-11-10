@@ -7,6 +7,7 @@ import { SelectField } from "./property-form/SelectField";
 import { PROPERTY_TYPES, OPERATION_MODES } from "@/constants/propertyOptions";
 import { UserProperty } from "@/types/property";
 import { PROVINCIAS } from "@/constants/provinces";
+import AddressMapPreview from "./AddressMapPreview";
 
 interface NewPropertyFormProps {
   propertyToEdit?: UserProperty | null;
@@ -63,6 +64,16 @@ export default function NewPropertyForm({
               onChangeText={(text) => updateField("address", text)}
             />
           </View>
+
+          {/* Previsualización del mapa */}
+          <AddressMapPreview
+            address={formData.address}
+            city={formData.city}
+            onCoordinatesFound={(lat, lng) => {
+              updateField("latitude", lat);
+              updateField("longitude", lng);
+            }}
+          />
 
           <SelectField
             label="Tipo de propiedad"
