@@ -13,6 +13,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { router, useFocusEffect } from "expo-router";
 import SearchBar from "@/components/SearchBar";
 import FilterModal, { FilterValues } from "@/components/FilterModal";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 interface Property {
   id: string;
@@ -39,6 +40,8 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<FilterValues>({});
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [mapReady, setMapReady] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -54,6 +57,18 @@ export default function HomeScreen() {
 
       const data = res.data?.data?.items || res.data?.items || [];
       setItems(data);
+      // Fetch favorites in parallel
+      try {
+        const favRes = await api.get("/api/properties/user/favorites");
+        const favs = favRes.data?.data || [];
+        const ids = new Set<string>(
+          favs.map((f: any) => (f.propertyId ? f.propertyId : f.property?.id)).filter(Boolean),
+        );
+        setFavorites(ids);
+      } catch (favErr) {
+        // Not critical if user is not authenticated
+        // console.log('Favorites fetch skipped:', favErr);
+      }
     } catch (e: any) {
       console.error("Error fetching properties:", e);
       setError("No se pudieron cargar los inmuebles");
@@ -164,6 +179,42 @@ export default function HomeScreen() {
             initialFilters={filters}
           />
 
+          {/* Mapa con marcadores de propiedades */}
+          <View className="mt-2 mb-4 overflow-hidden rounded-xl border border-gray-200">
+            <MapView
+              provider={PROVIDER_GOOGLE}
+              style={{ height: 260, width: "100%" }}
+              onMapReady={() => setMapReady(true)}
+              initialRegion={(function () {
+                const withCoords = items.filter(
+                  (p) => typeof (p as any).latitude === 'number' && typeof (p as any).longitude === 'number'
+                );
+                if (withCoords.length > 0) {
+                  const lat = Number((withCoords[0] as any).latitude);
+                  const lng = Number((withCoords[0] as any).longitude);
+                  return { latitude: lat, longitude: lng, latitudeDelta: 0.08, longitudeDelta: 0.08 };
+                }
+                // Fallback: centro de Cochabamba
+                return { latitude: -17.3895, longitude: -66.1568, latitudeDelta: 0.2, longitudeDelta: 0.2 };
+              })()}
+            >
+              {filteredItems
+                .filter((p) => (p as any).latitude != null && (p as any).longitude != null)
+                .map((p) => (
+                  <Marker
+                    key={p.id}
+                    coordinate={{
+                      latitude: Number((p as any).latitude),
+                      longitude: Number((p as any).longitude),
+                    }}
+                    title={p.title}
+                    description= {"Bs. " + p.price.toString()}
+                    onPress={() => handlePropertyPress(p.id)}
+                  />
+                ))}
+            </MapView>
+          </View>
+
           {loading && (
             <View className="mt-6 items-center justify-center">
               <ActivityIndicator size="large" color="#D65E48" />
@@ -215,7 +266,7 @@ export default function HomeScreen() {
                   ? "propiedad encontrada"
                   : "propiedades encontradas"}
               </Text>
-              <View className="flex-row flex-wrap justify-between">
+              <View className="flex-col">
                 {filteredItems.map((property) => {
                   const firstPhoto =
                     property.propertyPhotos &&
@@ -230,12 +281,22 @@ export default function HomeScreen() {
                   return (
                     <PropertyCard
                       key={property.id}
+                      propertyId={property.id}
                       title={property.title}
                       imageUrl={firstPhoto}
                       price={priceText}
                       tipo={getOperationTypeLabel(property.operationType)}
                       ubicacion={property.city || property.address}
-                      area={property.areaM2}
+                      address={property.address}
+                      favorited={favorites.has(property.id)}
+                      onToggleFavorite={(isFav) => {
+                        setFavorites((prev) => {
+                          const next = new Set(prev);
+                          if (isFav) next.add(property.id);
+                          else next.delete(property.id);
+                          return next;
+                        });
+                      }}
                       onPress={() => handlePropertyPress(property.id)}
                     />
                   );
