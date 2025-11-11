@@ -96,17 +96,17 @@ export default function ProfileScreen() {
               </View>
             </Pressable>
             <View>
-              <Text className="text-base font-semibold">
+              <Text className="text-lg font-semibold">
                 {profile?.fullName || user?.fullName || "Usuario"}
               </Text>
-              <Text className="text-gray-500 text-xs">
+              <Text className="text-gray-500 text-base">
                 {profile?.email || user?.email || "email@ejemplo.com"}
               </Text>
             </View>
           </View>
 
           <View className="mb-2">
-            <Text className="text-gray-600 text-sm mb-2">Modo de usuario</Text>
+            <Text className="text-gray-600 text-base mb-2">Modo de usuario</Text>
             <View className="flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
               <View className="flex-row items-center gap-2">
                 <Ionicons
@@ -118,9 +118,9 @@ export default function ProfileScreen() {
                   {isOwner ? "Propietario" : "Usuario"}
                 </Text>
               </View>
-              <Switch value={isOwner} onValueChange={onToggle} />
+              <Switch value={isOwner} onValueChange={onToggle} thumbColor={"#D65E48"} trackColor={{true: "#D65E48" }} />
             </View>
-            <Text className="text-gray-500 text-xs mt-2">
+            <Text className="text-gray-500 text-base mt-2">
               {isOwner
                 ? "Puedes publicar y administrar tus propiedades."
                 : "Puedes buscar y contactar propietarios."}
@@ -134,7 +134,7 @@ export default function ProfileScreen() {
             >
               <View className="flex-row items-center gap-2">
                 <Ionicons name="create-outline" size={18} />
-                <Text>Editar perfil</Text>
+                <Text className="text-base">Editar perfil</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#6B7280" />
             </Pressable>
@@ -142,17 +142,17 @@ export default function ProfileScreen() {
             <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
               <View className="flex-row items-center gap-2">
                 <Ionicons name="notifications-outline" size={18} />
-                <Text>Notificaciones</Text>
+                <Text className="text-base">Notificaciones</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#6B7280" />
             </Pressable>
           </View>
 
           <Pressable
-            className="mt-8 border border-gray-300 rounded-xl py-3 items-center"
+            className="mt-8 border bg-black rounded-xl py-3 items-center"
             onPress={handleSignOut}
           >
-            <Text className="font-semibold">Cerrar sesión</Text>
+            <Text className="font-semibold text-white">Cerrar sesión</Text>
           </Pressable>
         </View>
       )}
