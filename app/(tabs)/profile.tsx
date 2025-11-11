@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/auth/use-auth";
 import { useUserProfile } from "@/context/UserProfileContext";
 import { useProfileImage } from "@/hooks/profile/use-profile-image";
 import { router } from "expo-router";
+import Logo from "@/assets/logo";
 
 export default function ProfileScreen() {
   const { mode, toggle } = useMode();
@@ -64,7 +65,7 @@ export default function ProfileScreen() {
   return (
     <View className="flex-1 bg-white">
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
-        <Ionicons name="home-outline" size={20} color="#fff" />
+        <Logo size={20} />
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
