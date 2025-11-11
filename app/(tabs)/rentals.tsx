@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import RatingModal from "@/components/RatingModal";
 import { router } from "expo-router";
+import Logo from "@/assets/logo";
 
 // Temporal: lista mock de propiedades alquiladas por el usuario
 const RENTALS_MOCK = [
@@ -47,6 +48,10 @@ export default function RentalsScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
+              <Logo size={20} />
+              <Text className="text-white font-semibold text-lg">RentaYa</Text>
+            </View>
       <View className="px-4 pt-12 pb-4 bg-white border-b border-gray-200">
         <Text className="text-2xl font-bold">Mis alquileres y anticréticos</Text>
         <Text className="text-sm text-gray-600 mt-1">
