@@ -73,7 +73,7 @@ export default function LoginScreen() {
 
             <View className="mt-8 space-y-4">
               <Pressable 
-                className={`bg-primary rounded-xl py-4 items-center ${isLoading ? 'opacity-70' : ''}`}
+                className={`bg-black rounded-xl py-4 items-center ${isLoading ? 'opacity-70' : ''}`}
                 onPress={handleSubmit(onSubmit)}
                 disabled={isLoading}
               >

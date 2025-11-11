@@ -1,51 +1,309 @@
-import React from 'react';
-import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Logo from '@/assets/logo';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Logo from "@/assets/logo";
+import { api } from "@/lib/api";
+import PropertyCard from "@/components/PropertyCard";
+import { router, useFocusEffect } from "expo-router";
+import SearchBar from "@/components/SearchBar";
+import FilterModal, { FilterValues } from "@/components/FilterModal";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-function PropertyCard({ title, subtitle, price }: { title: string; subtitle: string; price: string }) {
-  return (
-    <View className="w-[48%] bg-white border border-gray-200 rounded-xl p-3 mb-4">
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-xs px-2 py-1 bg-gray-100 rounded-full">Alquiler</Text>
-        <Ionicons name="heart-outline" size={18} color="#6B7280" />
-      </View>
-      <View className="h-24 bg-gray-200 rounded-lg items-center justify-center mb-2">
-        <Text className="text-gray-500 text-xs">Imagen de propiedad</Text>
-      </View>
-      <Text className="text-xs text-gray-700 mb-1" numberOfLines={1}>{title}</Text>
-      <Text className="text-xs text-gray-500 mb-2" numberOfLines={1}>{subtitle}</Text>
-      <Text className="text-base font-semibold">{price}</Text>
-    </View>
-  );
+interface Property {
+  id: string;
+  title: string;
+  description?: string;
+  address: string;
+  city?: string;
+  bedrooms: number;
+  bathrooms: number;
+  areaM2?: number;
+  price: number;
+  operationType: string;
+  propertyPhotos?: {
+    id: string;
+    url: string;
+  }[];
 }
 
 export default function HomeScreen() {
+  const [items, setItems] = useState<Property[]>([]);
+  const [filteredItems, setFilteredItems] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<FilterValues>({});
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [mapReady, setMapReady] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, [])
+  );
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.get("/api/properties");
+
+      const data = res.data?.data?.items || res.data?.items || [];
+      setItems(data);
+      // Fetch favorites in parallel
+      try {
+        const favRes = await api.get("/api/properties/user/favorites");
+        const favs = favRes.data?.data || [];
+        const ids = new Set<string>(
+          favs.map((f: any) => (f.propertyId ? f.propertyId : f.property?.id)).filter(Boolean),
+        );
+        setFavorites(ids);
+      } catch (favErr) {
+        // Not critical if user is not authenticated
+        // console.log('Favorites fetch skipped:', favErr);
+      }
+    } catch (e: any) {
+      console.error("Error fetching properties:", e);
+      setError("No se pudieron cargar los inmuebles");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchQuery.trim() === "" && Object.keys(filters).length === 0) {
+      setFilteredItems(items);
+    } else {
+      let filtered = items;
+
+      // Filtro de búsqueda por texto
+      if (searchQuery.trim() !== "") {
+        filtered = filtered.filter(
+          (property) =>
+            property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.address.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // Filtro por provincia
+      if (filters.provincia) {
+        filtered = filtered.filter(
+          (property) =>
+            property.city?.toLowerCase() === filters.provincia?.toLowerCase()
+        );
+      }
+
+      // Filtro por tipo de propiedad
+      if (filters.tipoPropiedad) {
+        filtered = filtered.filter((property) =>
+          property.title.includes(filters.tipoPropiedad!)
+        );
+      }
+
+      // Filtro por modalidad
+      if (filters.modalidad) {
+        const modalidadMap: { [key: string]: string } = {
+          Alquiler: "RENT",
+          Venta: "SALE",
+          Anticrético: "ANTICRETICO",
+        };
+        const operationType = modalidadMap[filters.modalidad];
+        if (operationType) {
+          filtered = filtered.filter(
+            (property) => property.operationType === operationType
+          );
+        }
+      }
+
+      // Filtro por rango de precio
+      const min = filters.precioMin ? parseFloat(filters.precioMin) : undefined;
+      const max = filters.precioMax ? parseFloat(filters.precioMax) : undefined;
+      if ((min !== undefined && !isNaN(min)) || (max !== undefined && !isNaN(max))) {
+        filtered = filtered.filter((property) => {
+          const p = property.price ?? 0;
+          if (min !== undefined && !isNaN(min) && p < min) return false;
+          if (max !== undefined && !isNaN(max) && p > max) return false;
+          return true;
+        });
+      }
+
+      setFilteredItems(filtered);
+    }
+  }, [searchQuery, items, filters]);
+
+  const handlePropertyPress = (propertyId: string) => {
+    router.push(`/property/${propertyId}`);
+  };
+
+  const getOperationTypeLabel = (operationType: string) => {
+    const labels: { [key: string]: string } = {
+      RENT: "Alquiler",
+      SALE: "Venta",
+      ANTICRETICO: "Anticrético",
+      rent: "Alquiler",
+      sale: "Venta",
+      anticretico: "Anticrético",
+    };
+    return labels[operationType] || operationType;
+  };
+
   return (
     <View className="flex-1 bg-white">
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
-        <Logo size={20}/>
+        <Logo size={20} />
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
       <ScrollView className="flex-1">
         <View className="px-4 py-4">
-          <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-3 py-2">
-            <Ionicons name="search-outline" size={18} color="#6B7280" />
-            <TextInput placeholder="Buscar" className="flex-1 px-2 py-1" />
-            <Pressable className="ml-2 p-2">
-              <Ionicons name="options-outline" size={18} color="#11181C" />
-            </Pressable>
+          <View className="mb-4">
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onFilterPress={() => setShowFilterModal(true)}
+            />
           </View>
 
-          <View className="mt-4 flex-row flex-wrap justify-between">
-            <PropertyCard title="Casa en Zona Norte" subtitle="Imagen de propiedad 1" price="Bs 800/mes" />
-            <PropertyCard title="Departamento en Centro" subtitle="Imagen de propiedad 2" price="Bs 600/mes" />
-            <PropertyCard title="Casa en Zona Norte" subtitle="Imagen de propiedad 1" price="Bs 800/mes" />
-            <PropertyCard title="Departamento en Centro" subtitle="Imagen de propiedad 2" price="Bs 600/mes" />
-            <PropertyCard title="Casa en Zona Norte" subtitle="Imagen de propiedad 1" price="Bs 800/mes" />
-            <PropertyCard title="Departamento en Centro" subtitle="Imagen de propiedad 2" price="Bs 600/mes" />
+          <FilterModal
+            visible={showFilterModal}
+            onClose={() => setShowFilterModal(false)}
+            onApplyFilters={setFilters}
+            initialFilters={filters}
+          />
+
+          {/* Mapa con marcadores de propiedades */}
+          <View className="mt-2 mb-4 overflow-hidden rounded-xl border border-gray-200">
+            <MapView
+              provider={PROVIDER_GOOGLE}
+              style={{ height: 260, width: "100%" }}
+              onMapReady={() => setMapReady(true)}
+              initialRegion={(function () {
+                const withCoords = items.filter(
+                  (p) => typeof (p as any).latitude === 'number' && typeof (p as any).longitude === 'number'
+                );
+                if (withCoords.length > 0) {
+                  const lat = Number((withCoords[0] as any).latitude);
+                  const lng = Number((withCoords[0] as any).longitude);
+                  return { latitude: lat, longitude: lng, latitudeDelta: 0.08, longitudeDelta: 0.08 };
+                }
+                // Fallback: centro de Cochabamba
+                return { latitude: -17.3895, longitude: -66.1568, latitudeDelta: 0.2, longitudeDelta: 0.2 };
+              })()}
+            >
+              {filteredItems
+                .filter((p) => (p as any).latitude != null && (p as any).longitude != null)
+                .map((p) => (
+                  <Marker
+                    key={p.id}
+                    coordinate={{
+                      latitude: Number((p as any).latitude),
+                      longitude: Number((p as any).longitude),
+                    }}
+                    title={p.title}
+                    description= {"Bs. " + p.price.toString()}
+                    onPress={() => handlePropertyPress(p.id)}
+                  />
+                ))}
+            </MapView>
           </View>
+
+          {loading && (
+            <View className="mt-6 items-center justify-center">
+              <ActivityIndicator size="large" color="#D65E48" />
+              <Text className="text-gray-500 mt-2">
+                Cargando propiedades...
+              </Text>
+            </View>
+          )}
+
+          {error && !loading && (
+            <View className="mt-6 items-center justify-center bg-red-50 p-4 rounded-xl">
+              <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+              <Text className="text-red-500 mt-2 text-center">{error}</Text>
+              <Pressable
+                className="mt-4 bg-red-500 px-4 py-2 rounded-lg"
+                onPress={fetchData}
+              >
+                <Text className="text-white font-semibold">Reintentar</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {!loading &&
+            !error &&
+            filteredItems.length === 0 &&
+            items.length > 0 && (
+              <View className="mt-6 items-center justify-center">
+                <Ionicons name="search-outline" size={64} color="#D1D5DB" />
+                <Text className="text-gray-500 mt-4 text-center">
+                  No se encontraron propiedades con `{searchQuery}`
+                </Text>
+              </View>
+            )}
+
+          {!loading && !error && items.length === 0 && (
+            <View className="mt-6 items-center justify-center">
+              <Ionicons name="home-outline" size={64} color="#D1D5DB" />
+              <Text className="text-gray-500 mt-4 text-center">
+                No hay propiedades disponibles en este momento
+              </Text>
+            </View>
+          )}
+
+          {!loading && !error && filteredItems.length > 0 && (
+            <>
+              <Text className="text-lg font-semibold mb-3">
+                {filteredItems.length}{" "}
+                {filteredItems.length === 1
+                  ? "propiedad encontrada"
+                  : "propiedades encontradas"}
+              </Text>
+              <View className="flex-col">
+                {filteredItems.map((property) => {
+                  const firstPhoto =
+                    property.propertyPhotos &&
+                    property.propertyPhotos.length > 0
+                      ? property.propertyPhotos[0].url
+                      : undefined;
+
+                  const priceText = property.price
+                    ? `Bs ${property.price.toLocaleString("es-BO")}`
+                    : "Precio no disponible";
+
+                  return (
+                    <PropertyCard
+                      key={property.id}
+                      propertyId={property.id}
+                      title={property.title}
+                      imageUrl={firstPhoto}
+                      price={priceText}
+                      tipo={getOperationTypeLabel(property.operationType)}
+                      ubicacion={property.city || property.address}
+                      address={property.address}
+                      favorited={favorites.has(property.id)}
+                      onToggleFavorite={(isFav) => {
+                        setFavorites((prev) => {
+                          const next = new Set(prev);
+                          if (isFav) next.add(property.id);
+                          else next.delete(property.id);
+                          return next;
+                        });
+                      }}
+                      onPress={() => handlePropertyPress(property.id)}
+                    />
+                  );
+                })}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </View>
