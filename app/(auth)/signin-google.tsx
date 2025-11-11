@@ -43,7 +43,6 @@ export default function SignInWithGoogleScreen() {
       console.error('Error en login:', error);
       
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('Usuario canceló el login');
       } else if (error.code === statusCodes.IN_PROGRESS) {
         Alert.alert('Espera', 'Ya hay un login en progreso');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
