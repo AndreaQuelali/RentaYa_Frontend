@@ -22,7 +22,8 @@ export interface FilterValues {
   provincia?: string;
   tipoPropiedad?: string;
   modalidad?: string;
-  precio?: string;
+  precioMin?: string;
+  precioMax?: string;
 }
 
 export default function FilterModal({
@@ -36,7 +37,8 @@ export default function FilterModal({
     initialFilters?.tipoPropiedad || ""
   );
   const [modalidad, setModalidad] = useState(initialFilters?.modalidad || "");
-  const [precio, setPrecio] = useState(initialFilters?.precio || "");
+  const [precioMin, setPrecioMin] = useState(initialFilters?.precioMin || "");
+  const [precioMax, setPrecioMax] = useState(initialFilters?.precioMax || "");
 
   const [showProvinciaPicker, setShowProvinciaPicker] = useState(false);
   const [showTipoPicker, setShowTipoPicker] = useState(false);
@@ -47,7 +49,8 @@ export default function FilterModal({
       provincia,
       tipoPropiedad,
       modalidad,
-      precio,
+      precioMin,
+      precioMax,
     });
     onClose();
   };
@@ -56,7 +59,8 @@ export default function FilterModal({
     setProvincia("");
     setTipoPropiedad("");
     setModalidad("");
-    setPrecio("");
+    setPrecioMin("");
+    setPrecioMax("");
   };
 
   const renderPicker = (
@@ -155,16 +159,29 @@ export default function FilterModal({
             )}
 
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2 text-gray-900">
-                Precio (Bs)
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-xl px-4 py-3 bg-white"
-                placeholder="3000 Bs"
-                keyboardType="numeric"
-                value={precio}
-                onChangeText={setPrecio}
-              />
+              <Text className="text-sm font-medium mb-2 text-gray-900">Precio (Bs)</Text>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500 mb-1">Mínimo</Text>
+                  <TextInput
+                    className="border border-gray-300 rounded-xl px-4 py-3 bg-white"
+                    placeholder="Desde"
+                    keyboardType="numeric"
+                    value={precioMin}
+                    onChangeText={setPrecioMin}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500 mb-1">Máximo</Text>
+                  <TextInput
+                    className="border border-gray-300 rounded-xl px-4 py-3 bg-white"
+                    placeholder="Hasta"
+                    keyboardType="numeric"
+                    value={precioMax}
+                    onChangeText={setPrecioMax}
+                  />
+                </View>
+              </View>
             </View>
 
             {renderPicker(
