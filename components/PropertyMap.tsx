@@ -59,7 +59,7 @@ export default function PropertyMap({
 
   return (
     <View className="mt-4">
-      <Text className="text-base font-bold mb-2">Ubicación</Text>
+      <Text className="text-lg font-bold mb-2">Ubicación</Text>
 
       <View className="bg-white rounded-xl overflow-hidden border border-gray-200">
         {/* Sección visual del mapa */}
