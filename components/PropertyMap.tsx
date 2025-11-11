@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Linking, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 interface PropertyMapProps {
   latitude?: number | null;
@@ -62,40 +63,50 @@ export default function PropertyMap({
 
       <View className="bg-white rounded-xl overflow-hidden border border-gray-200">
         {/* Sección visual del mapa */}
-        <View
-          className="h-40 items-center justify-center"
-          style={{ backgroundColor: "#FFF5F3" }}
-        >
-          <View className="items-center">
-            {/* Icono de ubicación grande */}
-            <View className="w-16 h-16 bg-primary rounded-full items-center justify-center mb-3 shadow-lg">
-              <Ionicons name="location" size={32} color="#fff" />
+        {hasCoordinates ? (
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={{ height: 200, width: "100%" }}
+            initialRegion={{
+              latitude: Number(latitude),
+              longitude: Number(longitude),
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+          >
+            <Marker
+              coordinate={{ latitude: Number(latitude), longitude: Number(longitude) }}
+              title={city || "Ubicación"}
+              description={displayAddress || undefined}
+            />
+          </MapView>
+        ) : (
+          <View
+            className="h-40 items-center justify-center"
+            style={{ backgroundColor: "#FFF5F3" }}
+          >
+            <View className="items-center">
+              {/* Icono de ubicación grande */}
+              <View className="w-16 h-16 bg-primary rounded-full items-center justify-center mb-3 shadow-lg">
+                <Ionicons name="location" size={32} color="#fff" />
+              </View>
+
+              {/* Dirección */}
+              <Text className="text-base font-semibold text-gray-900 text-center px-4 mb-1">
+                {displayAddress}
+              </Text>
+
+              {/* Ciudad */}
+              {city && (
+                <Text className="text-sm text-gray-600">{city}, Cochabamba</Text>
+              )}
             </View>
-
-            {/* Dirección */}
-            <Text className="text-base font-semibold text-gray-900 text-center px-4 mb-1">
-              {displayAddress}
-            </Text>
-
-            {/* Ciudad */}
-            {city && (
-              <Text className="text-sm text-gray-600">{city}, Cochabamba</Text>
-            )}
           </View>
-        </View>
+        )}
 
         {/* Información adicional y botón */}
         <View className="p-4 bg-white border-t border-gray-100">
-          {/* Coordenadas si están disponibles */}
-          {coordinatesText && (
-            <View className="flex-row items-center mb-3">
-              <Ionicons name="navigate-circle" size={16} color="#059669" />
-              <Text className="text-xs text-gray-600 ml-2">
-                {coordinatesText}
-              </Text>
-            </View>
-          )}
-
+       
           {/* Botón para abrir en Google Maps */}
           <Pressable
             onPress={openInMaps}
