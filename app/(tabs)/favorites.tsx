@@ -89,7 +89,6 @@ export default function FavoritesScreen() {
                 const p = fav.property;
                 if (!p) return null;
                 const firstPhoto = p.propertyPhotos && p.propertyPhotos.length > 0 ? p.propertyPhotos[0].url : undefined;
-                const priceText = p.price ? `Bs ${p.price.toLocaleString('es-BO')}` : 'Precio no disponible';
                 const tipoLabel: Record<string, string> = { RENT: 'Alquiler', SALE: 'Venta', ANTICRETICO: 'Anticrético', rent: 'Alquiler', sale: 'Venta', anticretico: 'Anticrético' };
 
                 return (
@@ -98,7 +97,7 @@ export default function FavoritesScreen() {
                     propertyId={p.id}
                     title={p.title}
                     imageUrl={firstPhoto}
-                    price={priceText}
+                    price={Number(p.price) || 0}
                     tipo={tipoLabel[p.operationType] || p.operationType}
                     ubicacion={p.city}
                     address={p.address}

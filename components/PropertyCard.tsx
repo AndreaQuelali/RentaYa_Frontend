@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/lib/api';
+import { formatPrice } from '@/utils/propertyHelpers';
 
 export interface PropertyCardProps {
   propertyId: string;
   title: string;
   imageUrl?: string;
-  price: string;
+  price: number;
   tipo?: string;
   ubicacion?: string;
   address?: string;
@@ -26,13 +27,33 @@ export default function PropertyCard({
   tipo,
   ubicacion,
   address,
-  rating=4.8,
-  reviews=6,
+  rating,
+  reviews,
   onPress,
   favorited = false,
   onToggleFavorite,
 }: PropertyCardProps) {
   const [isFavorite, setIsFavorite] = useState<boolean>(favorited);
+  const [avgRating, setAvgRating] = useState<number | undefined>(rating);
+  const [reviewsCount, setReviewsCount] = useState<number | undefined>(reviews);
+
+  useEffect(() => {
+    // If rating info not provided, fetch reviews for this property and compute
+    if (avgRating == null || reviewsCount == null) {
+      (async () => {
+        try {
+          const res = await api.get(`/api/reviews/property/${propertyId}`);
+          const list: any[] = res.data?.data || [];
+          const count = list.length;
+          const avg = count > 0 ? Number((list.reduce((s, r) => s + (r.rating || 0), 0) / count).toFixed(1)) : 0;
+          setAvgRating(avg);
+          setReviewsCount(count);
+        } catch (e) {
+          // Ignore errors silently; keep defaults
+        }
+      })();
+    }
+  }, [propertyId]);
 
   const handleToggleFavorite = async () => {
     try {
@@ -89,10 +110,10 @@ export default function PropertyCard({
         </Text>
         <View className="flex-row items-center gap-2">
           <Ionicons name="star" size={18} color="#D65E48" />
-          <Text className="text-base text-gray-600 mt-1">{rating} ({reviews})</Text>
+          <Text className="text-base text-gray-600 mt-1">{(avgRating ?? 0).toFixed(1)} ({reviewsCount ?? 0})</Text>
         </View>
         </View>
-        <Text className="text-xl font-bold text-primary mt-1">{price}</Text>
+        <Text className="text-xl font-bold text-primary mt-1">{formatPrice(price)}</Text>
         <View className="flex-row items-center justify-between mt-1">
         <View className="flex-row items-center">
           <Ionicons name="location" size={18} color="#D65E48" />

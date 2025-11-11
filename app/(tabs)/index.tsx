@@ -274,17 +274,13 @@ export default function HomeScreen() {
                       ? property.propertyPhotos[0].url
                       : undefined;
 
-                  const priceText = property.price
-                    ? `Bs ${property.price.toLocaleString("es-BO")}`
-                    : "Precio no disponible";
-
                   return (
                     <PropertyCard
                       key={property.id}
                       propertyId={property.id}
                       title={property.title}
                       imageUrl={firstPhoto}
-                      price={priceText}
+                      price={Number(property.price) || 0}
                       tipo={getOperationTypeLabel(property.operationType)}
                       ubicacion={property.city || property.address}
                       address={property.address}
