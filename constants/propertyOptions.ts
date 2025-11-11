@@ -3,6 +3,10 @@ export const PROPERTY_TYPES = [
   "Departamento",
   "Oficina",
   "Terreno",
+  "Local comercial",
+  "Garaje",
+  "Parqueo",
+  "Galpón",
 ] as const;
 
 export const OPERATION_MODES = ["Alquiler", "Venta", "Anticrético"] as const;
