@@ -21,6 +21,7 @@ import {
   getStatusColorClasses,
 } from "@/utils/propertyHelpers";
 import { UserProperty } from "@/types/property";
+import Logo from "@/assets/logo";
 
 export default function PropertiesScreen() {
   const [showForm, setShowForm] = useState(false);
@@ -184,7 +185,7 @@ export default function PropertiesScreen() {
             <Ionicons name="chevron-back" size={22} color="#fff" />
           </Pressable>
         ) : (
-          <Ionicons name="home-outline" size={20} color="#fff" />
+        <Logo size={20} />
         )}
         <Text className="text-white font-semibold text-lg">
           {showForm

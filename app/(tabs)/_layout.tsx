@@ -57,6 +57,7 @@ export default function TabLayout() {
         options={{
           title: 'Mis alquileres',
           tabBarIcon: ({ color, size }) => <Ionicons name="list-outline" size={size ?? 24} color={color} />,
+          href: mode === 'owner' ? null : undefined,
         }}
       />
       <Tabs.Screen
