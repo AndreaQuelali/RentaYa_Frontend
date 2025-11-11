@@ -108,12 +108,16 @@ export default function HomeScreen() {
         }
       }
 
-      // Filtro por precio
-      if (filters.precio) {
-        const price = parseFloat(filters.precio);
-        if (!isNaN(price)) {
-          filtered = filtered.filter((property) => property.price <= price);
-        }
+      // Filtro por rango de precio
+      const min = filters.precioMin ? parseFloat(filters.precioMin) : undefined;
+      const max = filters.precioMax ? parseFloat(filters.precioMax) : undefined;
+      if ((min !== undefined && !isNaN(min)) || (max !== undefined && !isNaN(max))) {
+        filtered = filtered.filter((property) => {
+          const p = property.price ?? 0;
+          if (min !== undefined && !isNaN(min) && p < min) return false;
+          if (max !== undefined && !isNaN(max) && p > max) return false;
+          return true;
+        });
       }
 
       setFilteredItems(filtered);
