@@ -18,6 +18,7 @@ import {
   handleEmail,
   handleWhatsApp,
 } from "@/utils/contactHelpers";
+import { api } from "@/lib/api";
 
 const { width } = Dimensions.get("window");
 const galleryHeight = 220;
@@ -26,6 +27,7 @@ export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { property, loading, error } = usePropertyDetail(id);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const photos: string[] = useMemo(() => {
     return (property?.propertyPhotos || [])
@@ -35,6 +37,30 @@ export default function PropertyDetailScreen() {
 
   const priceText = property?.price ? formatPrice(property.price) : "—";
   const tipoText = property?.operationType;
+
+  React.useEffect(() => {
+    const loadFav = async () => {
+      try {
+        if (!id) return;
+        const favRes = await api.get("/api/properties/user/favorites");
+        const favs = favRes.data?.data || [];
+        const found = favs.some((f: any) => (f.propertyId ? f.propertyId : f.property?.id) === id);
+        setIsFavorite(found);
+      } catch (e) {
+        // ignore if unauthenticated
+      }
+    };
+    loadFav();
+  }, [id]);
+
+  const toggleFavorite = async () => {
+    try {
+      await api.post(`/api/properties/${id}/favorite`);
+      setIsFavorite((prev) => !prev);
+    } catch (e) {
+      console.error("Error toggling favorite: ", e);
+    }
+  };
 
   const handleConsultaSubmit = (message: string) => {
     // Por ahora solo mostramos un alert, luego conectaremos con el backend
@@ -77,8 +103,8 @@ export default function PropertyDetailScreen() {
         >
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
-        <Pressable className="p-1">
-          <Ionicons name="heart-outline" size={24} color="#fff" />
+        <Pressable className="p-1" onPress={toggleFavorite}>
+          <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={24} color="#fff" />
         </Pressable>
       </View>
 
@@ -118,7 +144,7 @@ export default function PropertyDetailScreen() {
             {/* Badge tipo operación */}
             {tipoText && (
               <View className="absolute top-3 left-3">
-                <Text className="text-xs px-2 py-1 bg-red-500 text-white rounded-md font-semibold">
+                <Text className="text-sm px-2 py-1 bg-primary text-white rounded-md font-semibold">
                   {tipoText}
                 </Text>
               </View>
@@ -137,12 +163,18 @@ export default function PropertyDetailScreen() {
                   className="text-base text-gray-600 ml-1"
                   numberOfLines={1}
                 >
-                  {property.city || "—"}
+                  {property.city || "—"},
+                </Text>
+                <Text
+                  className="text-base text-gray-600 ml-1"
+                  numberOfLines={1}
+                >
+                  {property.address || "—"}
                 </Text>
               </View>
             </View>
             <View className="items-end">
-              <Text className="text-2xl font-bold text-red-500">
+              <Text className="text-2xl font-bold text-primary">
                 {priceText}
               </Text>
              
@@ -151,7 +183,7 @@ export default function PropertyDetailScreen() {
 
           {/* Description */}
           <View className="mt-4">
-            <Text className="text-base font-bold mb-2">Descripción</Text>
+            <Text className="text-lg font-bold mb-2">Descripción</Text>
             <Text className="text-base text-gray-700 leading-6">
               {property.description || "Sin descripción"}
             </Text>
@@ -165,7 +197,7 @@ export default function PropertyDetailScreen() {
             city={property.city}
           />
           {/* Info Owner*/}
-          <View className="bg-gray-50 rounded-xl p-4 mb-4">
+          <View className="bg-gray-50 rounded-xl py-4 mb-4">
           <Text className="text-lg font-bold mb-3">
               Información del propietario
             </Text>
@@ -183,15 +215,15 @@ export default function PropertyDetailScreen() {
                 </View>
               )}
               <View className="ml-3 flex-1">
-                <Text className="text-gray-900 font-semibold">{property.owner.fullName}</Text>
-                <Text className="text-gray-500 text-sm">{property.owner.email}</Text>
-                <Text className="text-gray-500 text-sm">{property.owner.phone}</Text>
+                <Text className="text-gray-900 font-semibold text-lg">{property.owner.fullName}</Text>
+                <Text className="text-gray-500 text-base">{property.owner.email}</Text>
+                <Text className="text-gray-500 text-base">{property.owner.phone}</Text>
               </View>
             </View>
           </View>
 
           {/* Owner info */}
-          <View className="mt-6">
+          <View>
             
             <View className="gap-3 mb-6">
               <Pressable
@@ -223,26 +255,26 @@ export default function PropertyDetailScreen() {
           </View>
 
           {/* Reviews (estático) */}
-          {/* <View className="mt-6">
-            <Text className="text-sm font-semibold mb-2">Reseñas</Text>
-            <View className="flex-row items-start gap-3 mb-3">
+          {/* <View>
+            <Text className="text-lg font-semibold mb-2">Reseñas</Text>
+            <View className="flex-row items-center gap-3 mb-3">
               <View className="w-8 h-8 rounded-full bg-purple-200 items-center justify-center">
                 <Text className="text-purple-700 font-semibold">A</Text>
               </View>
               <View className="flex-1 border-b border-gray-200 pb-3">
-                <Text className="text-xs font-semibold">Usuario demo 1</Text>
-                <Text className="text-xs text-gray-600">
+                <Text className="text-sm font-semibold">Usuario demo 1</Text>
+                <Text className="text-sm text-gray-600">
                   Muy buen lugar, zona tranquila con acceso a supermercados...
                 </Text>
               </View>
             </View>
-            <View className="flex-row items-start gap-3">
-              <View className="w-8 h-8 rounded-full bg-purple-200 items-center justify-center">
-                <Text className="text-purple-700 font-semibold">A</Text>
+            <View className="flex-row items-center gap-3">
+              <View className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center">
+                <Text className="text-gray-700 font-semibold">A</Text>
               </View>
               <View className="flex-1 border-b border-gray-200 pb-3">
-                <Text className="text-xs font-semibold">Usuario demo 2</Text>
-                <Text className="text-xs text-gray-600">
+                <Text className="text-sm font-semibold">Usuario demo 2</Text>
+                <Text className="text-sm text-gray-600">
                   Muy buen lugar, zona tranquila con acceso a supermercados...
                 </Text>
               </View>
