@@ -12,8 +12,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { usePropertyDetail } from "@/hooks/properties/usePropertyDetail";
 import { formatPrice } from "@/utils/propertyHelpers";
-import RatingModal from "@/components/RatingModal";
-import ConsultaModal from "@/components/ConsultaModal";
 import PropertyMap from "@/components/PropertyMap";
 import {
   handleCall,
@@ -28,8 +26,6 @@ export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { property, loading, error } = usePropertyDetail(id);
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [showConsultaModal, setShowConsultaModal] = useState(false);
 
   const photos: string[] = useMemo(() => {
     return (property?.propertyPhotos || [])
@@ -39,14 +35,6 @@ export default function PropertyDetailScreen() {
 
   const priceText = property?.price ? formatPrice(property.price) : "—";
   const tipoText = property?.operationType;
-
-  const handleRatingSubmit = (rating: number, comment: string) => {
-    // Por ahora solo mostramos un alert, luego conectaremos con el backend
-    alert(
-      `Calificación enviada: ${rating} estrellas\n${comment ? `Comentario: ${comment}` : ""}`
-    );
-    console.log("Rating:", rating, "Comment:", comment);
-  };
 
   const handleConsultaSubmit = (message: string) => {
     // Por ahora solo mostramos un alert, luego conectaremos con el backend
@@ -157,7 +145,7 @@ export default function PropertyDetailScreen() {
               <Text className="text-2xl font-bold text-red-500">
                 {priceText}
               </Text>
-              <Text className="text-sm text-gray-500">/mes</Text>
+             
             </View>
           </View>
 
@@ -176,12 +164,35 @@ export default function PropertyDetailScreen() {
             address={property.address}
             city={property.city}
           />
+          {/* Info Owner*/}
+          <View className="bg-gray-50 rounded-xl p-4 mb-4">
+          <Text className="text-lg font-bold mb-3">
+              Información del propietario
+            </Text>
+            <View className="flex-row items-center">
+              {property.owner.profilePhoto ? (
+                <Image 
+                  source={{ uri: property.owner.profilePhoto }}
+                  className="w-12 h-12 rounded-full"
+                />
+              ) : (
+                <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
+                  <Text className="text-white font-bold text-lg">
+                    {property.owner.fullName.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <View className="ml-3 flex-1">
+                <Text className="text-gray-900 font-semibold">{property.owner.fullName}</Text>
+                <Text className="text-gray-500 text-sm">{property.owner.email}</Text>
+                <Text className="text-gray-500 text-sm">{property.owner.phone}</Text>
+              </View>
+            </View>
+          </View>
 
           {/* Owner info */}
           <View className="mt-6">
-            <Text className="text-base font-bold mb-3">
-              Información del propietario
-            </Text>
+            
             <View className="gap-3 mb-6">
               <Pressable
                 className="bg-primary rounded-xl py-4 flex-row items-center justify-center"
@@ -209,23 +220,6 @@ export default function PropertyDetailScreen() {
                 </Pressable>
               </View>
             </View>
-
-            <Pressable
-              className="bg-black rounded-xl py-4 items-center mt-4"
-              onPress={() => setShowConsultaModal(true)}
-            >
-              <Text className="text-white font-semibold text-base">
-                Enviar mensaje
-              </Text>
-            </Pressable>
-            <Pressable
-              className="border border-gray-300 rounded-xl py-4 items-center mt-2"
-              onPress={() => setShowRatingModal(true)}
-            >
-              <Text className="text-black font-semibold text-base">
-                Calificar propiedad
-              </Text>
-            </Pressable>
           </View>
 
           {/* Reviews (estático) */}
@@ -256,21 +250,6 @@ export default function PropertyDetailScreen() {
           </View> */}
         </View>
       </ScrollView>
-
-      <RatingModal
-        visible={showRatingModal}
-        onClose={() => setShowRatingModal(false)}
-        propertyTitle={property.title}
-        onSubmit={handleRatingSubmit}
-      />
-
-      <ConsultaModal
-        visible={showConsultaModal}
-        onClose={() => setShowConsultaModal(false)}
-        propertyTitle={property.title}
-        ownerName={property.owner.fullName}
-        onSubmit={handleConsultaSubmit}
-      />
     </View>
   );
 }
