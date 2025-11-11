@@ -1,69 +1,48 @@
 import { useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import SelectableChip from "@/components/SelectableChip";
 import StepIndicator from "@/components/StepIndicator";
-
-type PropertyType =
-  | "Casa"
-  | "Departamento"
-  | "Oficina"
-  | "Local comercial"
-  | "Garaje"
-  | "Parqueo"
-  | "Galpón"
-  | "Terreno";
-type Modality = "Alquiler" | "Anticrético";
-type Location = "Zona norte" | "Centro" | "Zona sur";
+import { useSavePreferences } from "@/hooks/auth/use-preferences";
+import { PROPERTY_TYPES, OPERATION_MODES } from "@/constants/propertyOptions";
+import { PROVINCIAS } from "@/constants/provinces";
 
 export default function PreferencesScreen() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<
-    PropertyType[]
-  >([]);
-  const [selectedModalities, setSelectedModalities] = useState<Modality[]>([]);
-  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(
+    []
+  );
+  const [selectedModality, setSelectedModality] = useState<string>("");
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
 
-  const propertyTypes: PropertyType[] = [
-    "Casa",
-    "Departamento",
-    "Oficina",
-    "Local comercial",
-    "Garaje",
-    "Parqueo",
-    "Galpón",
-    "Terreno",
-  ];
+  const { mutate: savePreferences, isPending } = useSavePreferences();
 
-  const modalities: Modality[] = ["Alquiler", "Anticrético"];
+  const propertyTypes = [...PROPERTY_TYPES];
+  const modalities = OPERATION_MODES.filter((m) => m !== "Venta"); // Solo Alquiler y Anticrético
+  const locations = PROVINCIAS;
 
-  const locations: Location[] = ["Zona norte", "Centro", "Zona sur"];
-
-  const togglePropertyType = (type: PropertyType) => {
+  const togglePropertyType = (type: string) => {
     setSelectedPropertyTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
-  const toggleModality = (modality: Modality) => {
-    setSelectedModalities((prev) =>
-      prev.includes(modality)
-        ? prev.filter((m) => m !== modality)
-        : [...prev, modality],
-    );
+  const selectModality = (modality: string) => {
+    setSelectedModality(modality);
   };
 
-  const toggleLocation = (location: Location) => {
+  const toggleLocation = (location: string) => {
     setSelectedLocations((prev) =>
       prev.includes(location)
         ? prev.filter((l) => l !== location)
-        : [...prev, location],
+        : [...prev, location]
     );
   };
 
-  const handleSkip = () => {
-    (router as any).replace("/(tabs)");
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleNext = () => {
@@ -75,7 +54,14 @@ export default function PreferencesScreen() {
   };
 
   const handleFinish = () => {
-    (router as any).replace("/(tabs)");
+    // Enviar preferencias al backend
+    const preferences = {
+      propertyTypes: selectedPropertyTypes,
+      modality: selectedModality || undefined,
+      locations: selectedLocations,
+    };
+
+    savePreferences(preferences);
   };
 
   const getStepIcon = () => {
@@ -107,11 +93,11 @@ export default function PreferencesScreen() {
   const getStepDescription = () => {
     switch (currentStep) {
       case 1:
-        return "Selecciona los tipos de propiedades que te interesan";
+        return "Selecciona uno o más tipos de propiedades";
       case 2:
-        return "¿Qué modalidad prefieres?";
+        return "Elige la modalidad que más te convenga";
       case 3:
-        return "¿En qué zona te gustaría encontrar propiedades?";
+        return "Selecciona las provincias de tu interés";
       default:
         return "";
     }
@@ -121,7 +107,7 @@ export default function PreferencesScreen() {
     switch (currentStep) {
       case 1:
         return (
-          <View className="flex-row flex-wrap gap-2">
+          <View className="flex-row flex-wrap gap-2 justify-center">
             {propertyTypes.map((type) => (
               <SelectableChip
                 key={type}
@@ -134,20 +120,20 @@ export default function PreferencesScreen() {
         );
       case 2:
         return (
-          <View className="flex-row flex-wrap gap-2">
+          <View className="flex-row flex-wrap gap-2 justify-center">
             {modalities.map((modality) => (
               <SelectableChip
                 key={modality}
                 label={modality}
-                selected={selectedModalities.includes(modality)}
-                onPress={() => toggleModality(modality)}
+                selected={selectedModality === modality}
+                onPress={() => selectModality(modality)}
               />
             ))}
           </View>
         );
       case 3:
         return (
-          <View className="flex-row flex-wrap gap-2">
+          <View className="flex-row flex-wrap gap-2 justify-center">
             {locations.map((location) => (
               <SelectableChip
                 key={location}
@@ -168,7 +154,7 @@ export default function PreferencesScreen() {
       case 1:
         return selectedPropertyTypes.length > 0;
       case 2:
-        return selectedModalities.length > 0;
+        return selectedModality !== "";
       case 3:
         return selectedLocations.length > 0;
       default:
@@ -188,10 +174,10 @@ export default function PreferencesScreen() {
               <Ionicons name={getStepIcon() as any} size={40} color="white" />
             </View>
             <Text className="text-3xl font-bold text-white text-center mb-2">
-              Elige tus preferencias
+              ¡Bienvenido a RentaYa!
             </Text>
             <Text className="text-white/80 text-center text-base px-6">
-              Personaliza tu experiencia
+              Personaliza tu búsqueda de propiedades
             </Text>
           </View>
 
@@ -208,40 +194,53 @@ export default function PreferencesScreen() {
                 </Text>
               </View>
 
-              <View className="mb-8">{renderStepContent()}</View>
+              <ScrollView
+                className="flex-1 mb-4"
+                showsVerticalScrollIndicator={false}
+              >
+                {renderStepContent()}
+              </ScrollView>
             </View>
 
             <View className="gap-3 mt-auto pt-4">
               <Pressable
-                className={`rounded-xl py-3 items-center ${
-                  canProceed() ? "bg-gray-900" : "bg-gray-300"
+                className={`rounded-xl py-4 items-center ${
+                  canProceed() && !isPending ? "bg-gray-900" : "bg-gray-300"
                 }`}
                 onPress={handleNext}
-                disabled={!canProceed()}
+                disabled={!canProceed() || isPending}
                 style={({ pressed }) => ({
                   opacity: pressed ? 0.9 : 1,
                 })}
               >
                 <Text
                   className={`font-semibold text-base ${
-                    canProceed() ? "text-white" : "text-gray-500"
+                    canProceed() && !isPending ? "text-white" : "text-gray-500"
                   }`}
                 >
-                  {currentStep === 3 ? "Finalizar" : "Siguiente"}
+                  {isPending
+                    ? "Guardando..."
+                    : currentStep === 3
+                      ? "Finalizar"
+                      : "Siguiente"}
                 </Text>
               </Pressable>
 
-              <Pressable
-                className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl items-center"
-                onPress={handleSkip}
-                style={({ pressed }) => ({
-                  opacity: pressed ? 0.7 : 1,
-                })}
-              >
-                <Text className="text-gray-700 font-semibold text-base">
-                  Omitir
-                </Text>
-              </Pressable>
+              {currentStep > 1 && (
+                <Pressable
+                  className="w-full py-4 bg-white border-2 border-gray-200 rounded-xl items-center flex-row justify-center gap-2"
+                  onPress={handleBack}
+                  disabled={isPending}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Ionicons name="arrow-back" size={20} color="#374151" />
+                  <Text className="text-gray-700 font-semibold text-base">
+                    Atrás
+                  </Text>
+                </Pressable>
+              )}
             </View>
           </View>
         </View>
