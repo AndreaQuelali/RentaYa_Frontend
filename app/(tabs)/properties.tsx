@@ -82,19 +82,32 @@ export default function PropertiesScreen() {
     try {
       // Fixed default user id as requested
       const userId = 'e0911d9b-8fe6-4381-acc0-e6475be5c8c7';
-
-      await api.post('/api/reports', {
+      // Coerce dates to YYYY-MM-DD if provided
+      const toYmd = (d?: Date) => (d ? new Date(d).toISOString().slice(0, 10) : undefined);
+      const body: any = {
         userId,
         propertyId: payload.propertyId,
         type: payload.type,
-        startDate: payload.startDate,
-        finishDate: payload.finishDate,
-        totalPrice: payload.totalPrice,
-      });
+      };
+      let s = toYmd(payload.startDate);
+      let f = toYmd(payload.finishDate);
+      // If both dates are missing, set sensible defaults: today and +30 días
+      if (!s && !f) {
+        const today = new Date();
+        const plus30 = new Date();
+        plus30.setDate(today.getDate() + 30);
+        s = today.toISOString().slice(0, 10);
+        f = plus30.toISOString().slice(0, 10);
+      }
+      if (s) body.startDate = s;
+      if (f) body.finishDate = f;
+      if (typeof payload.totalPrice === 'number') body.totalPrice = payload.totalPrice;
+
+      await api.post('/api/reports', body);
       Alert.alert("Éxito", "Inquilino asignado correctamente");
       fetchUserProperties();
     } catch (e: any) {
-      const msg = e?.response?.data?.message || 'No se pudo asignar el inquilino';
+      const msg = e?.response?.data?.message || e?.message || 'No se pudo asignar el inquilino';
       Alert.alert("Error", msg);
       throw e;
     }

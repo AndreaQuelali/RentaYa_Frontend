@@ -42,68 +42,161 @@ export default function RentalsScreen() {
       setLoading(true);
       setError(null);
 
-      // 1) Traer propiedades disponibles (públicas)
-      const resProps = await api.get("/api/properties");
-      const propsList = resProps.data?.data?.items || resProps.data?.items || [];
-
-      // 2) Traer reseñas del usuario para saber cuáles ya calificó
+      // 1) Traer reseñas del usuario para saber cuáles ya calificó
       let ratedSet = new Set<string>();
       try {
         const resReviews = await api.get(`/api/reviews/user/${user.id}`);
         const reviews = resReviews.data?.data || [];
-        ratedSet = new Set<string>(reviews.map((r: any) => r.propertyId));
+        const ids: string[] = [];
+        for (const r of reviews) {
+          if (r.propertyId) ids.push(r.propertyId);
+          else if (r.property?.id) ids.push(r.property.id);
+        }
+        ratedSet = new Set<string>(ids);
       } catch {}
-
-      // 3) Determinar por reportes si el usuario alquiló cada propiedad
       const now = new Date();
       const rentals: RentalItem[] = [];
-      // Ejecutar de forma limitada para evitar demasiadas solicitudes concurrentes
-      const concurrency = 5;
-      let i = 0;
-      async function worker() {
-        while (i < propsList.length) {
-          const idx = i++;
-          const p = propsList[idx];
-          try {
-            const repRes = await api.get(`/api/reports/${user.id}/${p.id}`);
-            const reports = repRes.data?.data || [];
-            if (Array.isArray(reports) && reports.length > 0) {
-              const latest = reports[0];
-              const start = latest.startDate ? new Date(latest.startDate) : null;
-              const finish = latest.finishDate ? new Date(latest.finishDate) : null;
-              // status desde backend si viene; si no, derivado por fechas
-              let status: string = (latest.status || '').toString().toUpperCase();
-              if (!status) {
-                if (start && finish) {
-                  if (now >= start && now <= finish) status = 'ACTIVO';
-                  else if (finish && now > finish) status = 'FINALIZADO';
-                }
-              }
-              // Se puede calificar en ambos estados (Activo y Finalizado)
-              const canRate = true;
 
-              rentals.push({
-                propertyId: p.id,
-                title: p.title,
-                city: p.city,
-                address: p.address,
-                price: p.price,
-                photo: p.propertyPhotos?.[0]?.url,
-                canRate,
-                rated: ratedSet.has(p.id),
-                status: status || 'ACTIVO',
-                startDate: latest.startDate,
-                finishDate: latest.finishDate,
-              });
+      // 2) Traer reportes del usuario en bulk y unir con properties
+      let reportsList: any[] | null = null;
+      try {
+        const reps = await api.get(`/api/reports/user/${user.id}`);
+        reportsList = reps.data?.data || reps.data || [];
+      } catch (e) {
+        reportsList = null;
+      }
+
+      // 3) Traer propiedades para unir por propertyId (en bulk solo una vez)
+      const resProps = await api.get("/api/properties");
+      const propsList = resProps.data?.data?.items || resProps.data?.items || [];
+      const propById = new Map<string, any>(propsList.map((p: any) => [p.id, p]));
+
+      if (Array.isArray(reportsList)) {
+        for (const r of reportsList) {
+          const pid = r.propertyId || r.property?.id;
+          const p = propById.get(pid);
+          const start = r.startDate ? new Date(r.startDate) : null;
+          const finish = r.finishDate ? new Date(r.finishDate) : null;
+          let status: string = (r.status || '').toString().toUpperCase();
+          if (!status) {
+            if (start && finish) {
+              if (now >= start && now <= finish) status = 'ACTIVO';
+              else if (finish && now > finish) status = 'FINALIZADO';
             }
-          } catch (e) {
-            // si falla para una propiedad, continuar con las demás
+          }
+          if (p) {
+            rentals.push({
+              propertyId: p.id,
+              title: p.title,
+              city: p.city,
+              address: p.address,
+              price: p.price,
+              photo: p.propertyPhotos?.[0]?.url,
+              canRate: true,
+              rated: ratedSet.has(p.id),
+              status: status || 'ACTIVO',
+              startDate: r.startDate,
+              finishDate: r.finishDate,
+            });
+          } else if (r.property) {
+            rentals.push({
+              propertyId: pid,
+              title: r.property.title,
+              city: r.property.city,
+              address: r.property.address,
+              price: r.property.price,
+              photo: r.property.propertyPhotos?.[0]?.url,
+              canRate: true,
+              rated: ratedSet.has(pid),
+              status: status || 'ACTIVO',
+              startDate: r.startDate,
+              finishDate: r.finishDate,
+            });
+          }
+        }
+        // Además, asegurar que TODAS las calificadas aparezcan aunque no haya reporte
+        for (const pid of ratedSet) {
+          if (rentals.some((x) => x.propertyId === pid)) continue;
+          const p = propById.get(pid);
+          if (p) {
+            rentals.push({
+              propertyId: p.id,
+              title: p.title,
+              city: p.city,
+              address: p.address,
+              price: p.price,
+              photo: p.propertyPhotos?.[0]?.url,
+              canRate: true,
+              rated: true,
+              status: 'FINALIZADO',
+              startDate: undefined,
+              finishDate: undefined,
+            });
+          }
+        }
+      } else {
+        // Fallback: per-property requests with small concurrency
+        const concurrency = 3;
+        let i = 0;
+        async function worker() {
+          while (i < propsList.length) {
+            const idx = i++;
+            const p = propsList[idx];
+            try {
+              const repRes = await api.get(`/api/reports/${user.id}/${p.id}`);
+              const reports = repRes.data?.data || [];
+              if (Array.isArray(reports) && reports.length > 0) {
+                const latest = reports[0];
+                const start = latest.startDate ? new Date(latest.startDate) : null;
+                const finish = latest.finishDate ? new Date(latest.finishDate) : null;
+                let status: string = (latest.status || '').toString().toUpperCase();
+                if (!status) {
+                  if (start && finish) {
+                    if (now >= start && now <= finish) status = 'ACTIVO';
+                    else if (finish && now > finish) status = 'FINALIZADO';
+                  }
+                }
+                rentals.push({
+                  propertyId: p.id,
+                  title: p.title,
+                  city: p.city,
+                  address: p.address,
+                  price: p.price,
+                  photo: p.propertyPhotos?.[0]?.url,
+                  canRate: true,
+                  rated: ratedSet.has(p.id),
+                  status: status || 'ACTIVO',
+                  startDate: latest.startDate,
+                  finishDate: latest.finishDate,
+                });
+              }
+            } catch {}
+          }
+        }
+        await Promise.all(Array.from({ length: concurrency }, () => worker()));
+        // Fallback: también agregamos calificadas sin reporte visible
+        for (const pid of ratedSet) {
+          if (rentals.some((x) => x.propertyId === pid)) continue;
+          const p = propById.get(pid);
+          if (p) {
+            rentals.push({
+              propertyId: p.id,
+              title: p.title,
+              city: p.city,
+              address: p.address,
+              price: p.price,
+              photo: p.propertyPhotos?.[0]?.url,
+              canRate: true,
+              rated: true,
+              status: 'FINALIZADO',
+              startDate: undefined,
+              finishDate: undefined,
+            });
           }
         }
       }
-      await Promise.all(Array.from({ length: concurrency }, () => worker()));
 
-      // Ordenar por fecha (opcional): ya calificadas abajo
+      // Ordenar: no calificadas primero
       rentals.sort((a, b) => Number(a.rated) - Number(b.rated));
       setItems(rentals);
     } catch (e: any) {
