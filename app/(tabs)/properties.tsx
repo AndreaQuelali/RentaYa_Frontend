@@ -8,7 +8,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -22,12 +21,17 @@ import {
 } from "@/utils/propertyHelpers";
 import { UserProperty } from "@/types/property";
 import Logo from "@/assets/logo";
+import AssignUserModal from "@/components/AssignUserModal";
+import { api } from "@/lib/api";
+import { Alert } from "react-native";
 
 export default function PropertiesScreen() {
   const [showForm, setShowForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<UserProperty | null>(
     null,
   );
+  const [assignVisible, setAssignVisible] = useState(false);
+  const [assignPropertyId, setAssignPropertyId] = useState<string | null>(null);
 
   const { properties, loading, error, fetchUserProperties, deleteProperty } =
     useUserProperties();
@@ -43,31 +47,12 @@ export default function PropertiesScreen() {
   };
 
   const handleDeleteProperty = async (propertyId: string) => {
-    Alert.alert(
-      "Eliminar propiedad",
-      "¿Estás seguro de que deseas eliminar esta propiedad? Esta acción no se puede deshacer.",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: async () => {
-            const success = await deleteProperty(propertyId);
-            if (success) {
-              Alert.alert("Éxito", "Propiedad eliminada correctamente");
-            } else {
-              Alert.alert(
-                "Error",
-                "No se pudo eliminar la propiedad. Intenta de nuevo.",
-              );
-            }
-          },
-        },
-      ],
-    );
+    const success = await deleteProperty(propertyId);
+    if (success) {
+      Alert.alert("Éxito", "Propiedad eliminada correctamente");
+    } else {
+      Alert.alert("Error", "No se pudo eliminar la propiedad. Intenta de nuevo.");
+    }
   };
 
   const handleEditProperty = (property: UserProperty) => {
@@ -84,6 +69,35 @@ export default function PropertiesScreen() {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingProperty(null);
+  };
+
+  const handleAssignSubmit = async (payload: {
+    usernameOrEmail: string;
+    propertyId: string;
+    type: string;
+    startDate?: Date;
+    finishDate?: Date;
+    totalPrice?: number;
+  }) => {
+    try {
+      // Fixed default user id as requested
+      const userId = 'e0911d9b-8fe6-4381-acc0-e6475be5c8c7';
+
+      await api.post('/api/reports', {
+        userId,
+        propertyId: payload.propertyId,
+        type: payload.type,
+        startDate: payload.startDate,
+        finishDate: payload.finishDate,
+        totalPrice: payload.totalPrice,
+      });
+      Alert.alert("Éxito", "Inquilino asignado correctamente");
+      fetchUserProperties();
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || 'No se pudo asignar el inquilino';
+      Alert.alert("Error", msg);
+      throw e;
+    }
   };
 
   const renderPropertyCard = (property: UserProperty) => {
@@ -148,6 +162,16 @@ export default function PropertiesScreen() {
               </Text>
 
               <View className="flex-row gap-2">
+                <Pressable
+                  className="p-2"
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setAssignPropertyId(property.id);
+                    setAssignVisible(true);
+                  }}
+                >
+                  <Ionicons name="person-add-outline" size={20} color="#D65E48" />
+                </Pressable>
                 <Pressable
                   className="p-2"
                   onPress={(e) => {
@@ -248,14 +272,7 @@ export default function PropertiesScreen() {
                   Aún no tienes propiedades publicadas.{"\n"}¡Empieza ahora y
                   publica tu primera propiedad!
                 </Text>
-                <Pressable
-                  className="bg-black rounded-xl py-3 px-5"
-                  onPress={() => setShowForm(true)}
-                >
-                  <Text className="text-white font-semibold">
-                    Publicar propiedad
-                  </Text>
-                </Pressable>
+                
               </View>
             )}
 
@@ -271,6 +288,12 @@ export default function PropertiesScreen() {
           </View>
         </ScrollView>
       )}
+      <AssignUserModal
+        visible={assignVisible}
+        onClose={() => setAssignVisible(false)}
+        propertyId={assignPropertyId}
+        onSubmit={handleAssignSubmit}
+      />
     </KeyboardAvoidingView>
   );
 }

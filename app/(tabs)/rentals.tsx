@@ -15,6 +15,9 @@ type RentalItem = {
   photo?: string;
   canRate: boolean;
   rated: boolean;
+  status: string; // e.g., ACTIVE | FINALIZED or backend values
+  startDate?: string;
+  finishDate?: string;
 };
 
 export default function RentalsScreen() {
@@ -26,6 +29,7 @@ export default function RentalsScreen() {
   const [showRating, setShowRating] = React.useState(false);
   const [selected, setSelected] = React.useState<{ id: string; title: string } | null>(null);
   
+  const [tab, setTab] = React.useState<'ACTIVO' | 'FINALIZADO'>('ACTIVO');
 
   const openRate = (id: string, title: string) => {
     setSelected({ id, title });
@@ -64,10 +68,19 @@ export default function RentalsScreen() {
             const repRes = await api.get(`/api/reports/${user.id}/${p.id}`);
             const reports = repRes.data?.data || [];
             if (Array.isArray(reports) && reports.length > 0) {
-              // Verificar si terminó el periodo (finishDate) para habilitar calificación
               const latest = reports[0];
+              const start = latest.startDate ? new Date(latest.startDate) : null;
               const finish = latest.finishDate ? new Date(latest.finishDate) : null;
-              const canRate = !!finish && finish.getTime() <= now.getTime();
+              // status desde backend si viene; si no, derivado por fechas
+              let status: string = (latest.status || '').toString().toUpperCase();
+              if (!status) {
+                if (start && finish) {
+                  if (now >= start && now <= finish) status = 'ACTIVO';
+                  else if (finish && now > finish) status = 'FINALIZADO';
+                }
+              }
+              // Se puede calificar en ambos estados (Activo y Finalizado)
+              const canRate = true;
 
               rentals.push({
                 propertyId: p.id,
@@ -78,6 +91,9 @@ export default function RentalsScreen() {
                 photo: p.propertyPhotos?.[0]?.url,
                 canRate,
                 rated: ratedSet.has(p.id),
+                status: status || 'ACTIVO',
+                startDate: latest.startDate,
+                finishDate: latest.finishDate,
               });
             }
           } catch (e) {
@@ -128,6 +144,11 @@ export default function RentalsScreen() {
     router.push(`/property/${id}`);
   };
 
+  const filtered = React.useMemo(() => {
+    const key = tab === 'ACTIVO' ? 'ACTIVO' : 'FINALIZADO';
+    return items.filter((it) => (it.status || '').toUpperCase().includes(key));
+  }, [items, tab]);
+
   return (
     <View className="flex-1 bg-white">
       <View className="px-4 pt-12 pb-4 bg-white border-b border-gray-200">
@@ -139,6 +160,21 @@ export default function RentalsScreen() {
 
       <ScrollView className="flex-1">
         <View className="px-4 py-4">
+          {/* Tabs */}
+          <View className="flex-row bg-gray-100 rounded-xl p-1 mb-4">
+            <Pressable
+              className={`flex-1 py-2 rounded-lg items-center ${tab === 'ACTIVO' ? 'bg-white' : ''}`}
+              onPress={() => setTab('ACTIVO')}
+            >
+              <Text className={`font-semibold ${tab === 'ACTIVO' ? 'text-gray-900' : 'text-gray-500'}`}>Activo</Text>
+            </Pressable>
+            <Pressable
+              className={`flex-1 py-2 rounded-lg items-center ${tab === 'FINALIZADO' ? 'bg-white' : ''}`}
+              onPress={() => setTab('FINALIZADO')}
+            >
+              <Text className={`font-semibold ${tab === 'FINALIZADO' ? 'text-gray-900' : 'text-gray-500'}`}>Finalizado</Text>
+            </Pressable>
+          </View>
           {loading && (
             <View className="items-center justify-center py-20">
               <ActivityIndicator size="large" color="#D65E48" />
@@ -153,13 +189,13 @@ export default function RentalsScreen() {
             </View>
           )}
 
-          {!loading && !error && items.length === 0 ? (
+          {!loading && !error && filtered.length === 0 ? (
             <View className="items-center justify-center py-20">
               <Ionicons name="home-outline" size={64} color="#d1d5db" />
-              <Text className="text-gray-600 mt-4">Aún no tienes alquileres o anticreticos de propiedades</Text>
+              <Text className="text-gray-600 mt-4">No hay propiedades en esta sección</Text>
             </View>
           ) : (
-            items.map((r) => (
+            filtered.map((r) => (
               <View key={r.propertyId} className="bg-white border border-gray-200 rounded-xl mb-4 overflow-hidden">
                 {r.photo ? (
                   <Image source={{ uri: r.photo }} className="w-full h-40" />
@@ -175,6 +211,10 @@ export default function RentalsScreen() {
                     <Ionicons name="location-outline" size={16} color="#6b7280" />
                     <Text className="text-sm text-gray-600 ml-1">{r.city}</Text>
                   </View>
+                  <View className="flex-row items-center mt-1">
+                    <Ionicons name={r.status?.toUpperCase().includes('FINAL') ? 'checkmark-circle' : 'time-outline'} size={16} color={r.status?.toUpperCase().includes('FINAL') ? '#10B981' : '#F59E0B'} />
+                    <Text className={`text-xs ml-1 ${r.status?.toUpperCase().includes('FINAL') ? 'text-green-600' : 'text-amber-600'}`}>{r.status || 'Activo'}</Text>
+                  </View>
 
                   <View className="flex-row gap-2 mt-4">
                     <Pressable
@@ -189,7 +229,7 @@ export default function RentalsScreen() {
                       onPress={() => openRate(r.propertyId, r.title)}
                     >
                       <Text className={`font-semibold ${r.rated || !r.canRate ? "text-gray-500" : "text-white"}`}>
-                        {r.rated ? "Calificada" : r.canRate ? "Calificar" : "Aún no disponible"}
+                        {r.rated ? "Calificada" : "Calificar"}
                       </Text>
                     </Pressable>
                   </View>

@@ -28,6 +28,8 @@ export default function PropertyDetailScreen() {
   const router = useRouter();
   const { property, loading, error } = usePropertyDetail(id);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [avgRating, setAvgRating] = useState<number>(0);
 
   const photos: string[] = useMemo(() => {
     return (property?.propertyPhotos || [])
@@ -51,6 +53,23 @@ export default function PropertyDetailScreen() {
       }
     };
     loadFav();
+  }, [id]);
+
+  React.useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        if (!id) return;
+        const res = await api.get(`/api/reviews/property/${id}`);
+        const list: any[] = res.data?.data || [];
+        setReviews(list);
+        const count = list.length;
+        const avg = count > 0 ? Number((list.reduce((s, r) => s + (r.rating || 0), 0) / count).toFixed(1)) : 0;
+        setAvgRating(avg);
+      } catch (e) {
+        // ignore unauthenticated or not found
+      }
+    };
+    loadReviews();
   }, [id]);
 
   const toggleFavorite = async () => {
@@ -157,20 +176,21 @@ export default function PropertyDetailScreen() {
               <Text className="text-xl font-bold" numberOfLines={2}>
                 {property.title || "—"}
               </Text>
-              <View className="flex-row items-center mt-2">
+             
+              <View className="flex-row items-center justify-between mt-2">
+                <View className="flex-row items-center w-full">
                 <Ionicons name="location" size={18} color="#D65E48" />
                 <Text
                   className="text-base text-gray-600 ml-1"
                   numberOfLines={1}
                 >
-                  {property.city || "—"},
+                  {property.city || "—"}, {property.address || "—"}
                 </Text>
-                <Text
-                  className="text-base text-gray-600 ml-1"
-                  numberOfLines={1}
-                >
-                  {property.address || "—"}
-                </Text>
+                </View>
+                <View className="flex-row items-center">
+                <Ionicons name="star" size={16} color="#D65E48" />
+                <Text className="text-base text-gray-700 ml-1">{avgRating.toFixed(1)} ({reviews.length})</Text>
+              </View>
               </View>
             </View>
             <View className="items-end">
@@ -254,32 +274,43 @@ export default function PropertyDetailScreen() {
             </View>
           </View>
 
-          {/* Reviews (estático) */}
-          {/* <View>
-            <Text className="text-lg font-semibold mb-2">Reseñas</Text>
-            <View className="flex-row items-center gap-3 mb-3">
-              <View className="w-8 h-8 rounded-full bg-purple-200 items-center justify-center">
-                <Text className="text-purple-700 font-semibold">A</Text>
+          {/* Reviews list */}
+          <View className="mt-2">
+            <Text className="text-lg font-semibold mb-2">Reseñas de la propiedad</Text>
+            {reviews.length === 0 ? (
+              <Text className="text-base text-gray-600">Esta propiedad aún no tiene reseñas.</Text>
+            ) : (
+              <View className="gap-4">
+                {reviews.map((rv, idx) => {
+                  const reviewer = rv.user?.fullName || rv.user?.name || rv.userFullName || rv.userName || rv.authorName || 'Usuario';
+                  const initial = reviewer?.charAt(0)?.toUpperCase?.() || 'U';
+                  return (
+                    <View key={rv.id || idx} className="border-b border-gray-200 pb-3">
+                      {rv.content ? (
+                      <View className="flex-col items-start mb-2 gap-2">
+                      <View className="flex-row items-center justify-between gap-2">
+                        <View className="flex-row items-center gap-2">
+                          <View className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center">
+                            <Text className="text-gray-700 font-semibold">{initial}</Text>
+                          </View>
+                          <Text className="text-sm font-semibold text-gray-800">{reviewer}</Text>
+                        </View>
+                        <View className="flex-row items-center">
+                          <Ionicons name="star" size={14} color="#D65E48" />
+                          <Text className="text-sm text-gray-700 ml-1">{rv.rating}</Text>
+                        </View>
+                      </View>
+                      <Text className="text-base text-gray-700">{rv.content}</Text>   
+                      </View>
+                      ) : (
+                       ""
+                       )}
+                    </View>
+                  );
+                })}
               </View>
-              <View className="flex-1 border-b border-gray-200 pb-3">
-                <Text className="text-sm font-semibold">Usuario demo 1</Text>
-                <Text className="text-sm text-gray-600">
-                  Muy buen lugar, zona tranquila con acceso a supermercados...
-                </Text>
-              </View>
-            </View>
-            <View className="flex-row items-center gap-3">
-              <View className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center">
-                <Text className="text-gray-700 font-semibold">A</Text>
-              </View>
-              <View className="flex-1 border-b border-gray-200 pb-3">
-                <Text className="text-sm font-semibold">Usuario demo 2</Text>
-                <Text className="text-sm text-gray-600">
-                  Muy buen lugar, zona tranquila con acceso a supermercados...
-                </Text>
-              </View>
-            </View>
-          </View> */}
+            )}
+          </View>
         </View>
       </ScrollView>
     </View>
