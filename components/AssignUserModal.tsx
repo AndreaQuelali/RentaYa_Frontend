@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Modal, View, Text, TextInput, Pressable } from "react-native";
+import { Modal, View, Text, TextInput, Pressable, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
   visible: boolean;
@@ -7,108 +8,175 @@ type Props = {
   propertyId: string | null;
   onAssigned?: () => void;
   onSubmit: (payload: {
-    usernameOrEmail: string;
+    email: string;
     propertyId: string;
     type: string;
-    startDate?: Date;
-    finishDate?: Date;
-    totalPrice?: number;
+    startDate: string;
+    finishDate: string;
+    price: number;
   }) => Promise<void>;
 };
 
+const modalidadOptions = [
+  { label: 'Alquiler', value: 'RENT' },
+  { label: 'Anticrético', value: 'ANTICRETIC' },
+];
+
 export default function AssignUserModal({ visible, onClose, propertyId, onAssigned, onSubmit }: Props) {
-  const [usernameOrEmail, setUsernameOrEmail] = useState("");
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [finishDate, setFinishDate] = useState<Date | undefined>(undefined);
-  const [totalPrice, setTotalPrice] = useState<string>("");
+  const [email, setEmail] = useState("");
+  const [modalidad, setModalidad] = useState('RENT');
+  const [startDate, setStartDate] = useState("");
+  const [finishDate, setFinishDate] = useState("");
+  const [price, setPrice] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [startDateStr, setStartDateStr] = useState("");
-  const [finishDateStr, setFinishDateStr] = useState("");
-  const [errors, setErrors] = useState<{ username?: string; dates?: string; price?: string }>({});
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; modalidad?: string; dates?: string; price?: string }>({});
 
   const reset = () => {
-    setUsernameOrEmail("");
-    setStartDate(undefined);
-    setFinishDate(undefined);
-    setTotalPrice("");
-    setStartDateStr("");
-    setFinishDateStr("");
+    setEmail("");
+    setModalidad('RENT');
+    setStartDate("");
+    setFinishDate("");
+    setPrice("");
+    setShowDropdown(false);
     setErrors({});
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handleSubmit = async () => {
     if (!propertyId) return;
-    const newErrors: { username?: string; dates?: string; price?: string } = {};
-    // usernameOrEmail es opcional según requerimiento actual
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (startDateStr && !dateRegex.test(startDateStr)) {
+    
+    const newErrors: { email?: string; modalidad?: string; dates?: string; price?: string } = {};
+    
+    if (!email.trim()) {
+      newErrors.email = "El email es requerido";
+    } else if (!validateEmail(email)) {
+      newErrors.email = "Email inválido";
+    }
+    
+    if (!modalidad) {
+      newErrors.modalidad = "La modalidad es requerida";
+    }
+    
+    if (!startDate) {
+      newErrors.dates = "La fecha de inicio es requerida";
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
       newErrors.dates = "Fecha de inicio inválida (YYYY-MM-DD)";
     }
-    if (finishDateStr && !dateRegex.test(finishDateStr)) {
+    
+    if (!finishDate) {
+      newErrors.dates = newErrors.dates ? newErrors.dates + "; fin requerida" : "La fecha de fin es requerida";
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(finishDate)) {
       newErrors.dates = newErrors.dates ? newErrors.dates + "; fin inválida" : "Fecha de fin inválida (YYYY-MM-DD)";
     }
-    if (totalPrice && isNaN(Number(totalPrice))) {
-      newErrors.price = "Precio total debe ser numérico";
+    
+    if (!price.trim()) {
+      newErrors.price = "El precio es requerido";
+    } else if (isNaN(Number(price)) || Number(price) <= 0) {
+      newErrors.price = "Precio debe ser un número mayor a 0";
     }
+    
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
+    
     try {
       setSubmitting(true);
-      // Parse dates from inputs (YYYY-MM-DD)
-      const sDate = startDateStr ? new Date(startDateStr) : startDate;
-      const fDate = finishDateStr ? new Date(finishDateStr) : finishDate;
       await onSubmit({
-        usernameOrEmail,
+        email: email.trim(),
         propertyId,
-        type: 'RENT',
-        startDate: sDate,
-        finishDate: fDate,
-        totalPrice: totalPrice ? Number(totalPrice) : undefined,
+        type: modalidad,
+        startDate,
+        finishDate,
+        price: Number(price),
       });
       onAssigned?.();
       reset();
       onClose();
     } catch (e) {
-      setSubmitting(false);
+      console.error('Error al asignar:', e);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const selectedModalidad = modalidadOptions.find(option => option.value === modalidad);
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View className="flex-1 bg-black/40 items-center justify-end">
         <View className="w-full bg-white rounded-t-2xl p-4">
-          <Text className="text-lg font-semibold mb-3">Asignar inquilino</Text>
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-lg font-semibold">Asignar inquilino</Text>
+            <TouchableOpacity onPress={onClose} disabled={submitting}>
+              <Ionicons name="close" size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
 
-          <View className="gap-3">
+          <View className="gap-4">
             <View>
-              <Text className="text-sm text-gray-600 mb-1">Correo o nombre de usuario</Text>
+              <Text className="text-sm text-gray-600 mb-1 font-medium">Email *</Text>
               <TextInput
-                value={usernameOrEmail}
-                onChangeText={setUsernameOrEmail}
-                placeholder="usuario@correo.com"
-                className={`border rounded-xl px-3 py-2 ${errors.username ? 'border-red-400' : 'border-gray-300'}`}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="correo@ejemplo.com"
+                className={`border rounded-xl px-3 py-2 ${errors.email ? 'border-red-400' : 'border-gray-300'}`}
                 autoCapitalize="none"
+                keyboardType="email-address"
               />
-              {errors.username && <Text className="text-red-600 text-xs mt-1">{errors.username}</Text>}
+              {errors.email && <Text className="text-red-600 text-xs mt-1">{errors.email}</Text>}
+            </View>
+
+            <View>
+              <Text className="text-sm text-gray-600 mb-1 font-medium">Modalidad *</Text>
+              <TouchableOpacity
+                onPress={() => setShowDropdown(!showDropdown)}
+                className={`border rounded-xl px-3 py-2 flex-row items-center justify-between ${errors.modalidad ? 'border-red-400' : 'border-gray-300'}`}
+              >
+                <Text className={selectedModalidad ? 'text-gray-900' : 'text-gray-400'}>
+                  {selectedModalidad?.label || 'Seleccionar modalidad'}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color="#6B7280" />
+              </TouchableOpacity>
+              
+              {showDropdown && (
+                <View className="absolute top-20 left-4 right-4 bg-white border border-gray-200 rounded-xl shadow-lg z-10">
+                  {modalidadOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      onPress={() => {
+                        setModalidad(option.value);
+                        setShowDropdown(false);
+                      }}
+                      className="px-3 py-2 border-b border-gray-100 last:border-b-0"
+                    >
+                      <Text className="text-gray-900">{option.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              
+              {errors.modalidad && <Text className="text-red-600 text-xs mt-1">{errors.modalidad}</Text>}
             </View>
 
             <View className="flex-row gap-3">
               <View className="flex-1">
-                <Text className="text-sm text-gray-600 mb-1">Inicio (YYYY-MM-DD)</Text>
+                <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Inicio *</Text>
                 <TextInput
-                  value={startDateStr}
-                  onChangeText={setStartDateStr}
+                  value={startDate}
+                  onChangeText={setStartDate}
                   placeholder="2025-12-31"
                   className={`border rounded-xl px-3 py-2 ${errors.dates ? 'border-red-400' : 'border-gray-300'}`}
                 />
               </View>
               <View className="flex-1">
-                <Text className="text-sm text-gray-600 mb-1">Fin (YYYY-MM-DD)</Text>
+                <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Fin *</Text>
                 <TextInput
-                  value={finishDateStr}
-                  onChangeText={setFinishDateStr}
+                  value={finishDate}
+                  onChangeText={setFinishDate}
                   placeholder="2026-12-31"
                   className={`border rounded-xl px-3 py-2 ${errors.dates ? 'border-red-400' : 'border-gray-300'}`}
                 />
@@ -117,11 +185,11 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
             {errors.dates && <Text className="text-red-600 text-xs mt-1">{errors.dates}</Text>}
 
             <View>
-              <Text className="text-sm text-gray-600 mb-1">Precio total (opcional)</Text>
+              <Text className="text-sm text-gray-600 mb-1 font-medium">Precio (Bs) *</Text>
               <TextInput
-                value={totalPrice}
-                onChangeText={setTotalPrice}
-                placeholder="0"
+                value={price}
+                onChangeText={setPrice}
+                placeholder="0.00"
                 keyboardType="numeric"
                 className={`border rounded-xl px-3 py-2 ${errors.price ? 'border-red-400' : 'border-gray-300'}`}
               />
@@ -129,8 +197,12 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
             </View>
           </View>
 
-          <View className="flex-row gap-3 mt-5">
-            <Pressable className="flex-1 bg-gray-100 rounded-xl py-3 items-center" onPress={onClose} disabled={submitting}>
+          <View className="flex-row gap-3 mt-6">
+            <Pressable 
+              className="flex-1 bg-gray-100 rounded-xl py-3 items-center" 
+              onPress={onClose} 
+              disabled={submitting}
+            >
               <Text className="text-gray-700 font-semibold">Cancelar</Text>
             </Pressable>
             <Pressable
