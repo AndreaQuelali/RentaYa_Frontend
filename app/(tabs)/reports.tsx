@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import Logo from '@/assets/logo';
 
 interface PropertyStats {
   totalProperties: number;
@@ -14,14 +15,54 @@ interface PropertyStats {
   totalReviews: number;
 }
 
+interface Property {
+  id: string;
+  ownerId: string;
+  title: string;
+  description: string;
+  address: string;
+  city: string;
+  areaM2: string;
+  price: string;
+  latitude: string | null;
+  longitude: string | null;
+  operationType: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ReportUser {
+  id: string;
+  email: string;
+  fullName: string;
+  profilePhoto: string | null;
+}
+
 interface ReportItem {
   id: string;
-  propertyName: string;
-  propertyType: string;
+  userId: string;
+  propertyId: string;
+  type: string;
   status: string;
-  income: number;
+  totalPrice: string;
+  startDate: string;
+  finishDate: string;
+  uploadedAt: string;
+  parameters: any;
+  fileUrl: string | null;
   createdAt: string;
-  tenantName?: string;
+  property: Property;
+  user: ReportUser;
+}
+
+interface SummaryCard {
+  title: string;
+  value: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+  textColor: string;
 }
 
 function SummaryCards({ stats, isLoading }: { stats: PropertyStats; isLoading?: boolean }) {
@@ -33,7 +74,7 @@ function SummaryCards({ stats, isLoading }: { stats: PropertyStats; isLoading?: 
     );
   }
 
-  const cards = [
+  const cards: SummaryCard[] = [
     {
       title: 'Total Propiedades',
       value: stats.totalProperties.toString(),
@@ -98,7 +139,7 @@ function SummaryCards({ stats, isLoading }: { stats: PropertyStats; isLoading?: 
         <View className="flex-row gap-3 px-4">
           {cards.map((card, index) => (
             <View
-              key={index}
+              key={`card-${index}`}
               className={`${card.bgColor} rounded-xl p-4 min-w-[140px] shadow-sm`}
             >
               <View className={`w-10 h-10 ${card.color} rounded-lg flex items-center justify-center mb-3`}>
@@ -128,26 +169,57 @@ function ReportsTable({ reports, isLoading, onExport }: { reports: ReportItem[];
   }
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'disponible':
-        return 'bg-green-100 text-green-800';
-      case 'alquilado':
-        return 'bg-blue-100 text-blue-800';
-      case 'anticrético':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'finalizado') {
+      return 'bg-gray-100 text-gray-800';
     }
+    if (statusLower === 'activo' || statusLower.includes('activo')) {
+      return 'bg-green-100 text-green-800';
+    }
+    if (statusLower.includes('alquilado')) {
+      return 'bg-blue-100 text-blue-800';
+    }
+    return 'bg-purple-100 text-purple-800';
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch {
+      return 'Fecha inválida';
+    }
   };
+
+  if (reports.length === 0) {
+    return (
+      <View className="bg-white rounded-xl shadow-sm">
+        <View className="p-4 border-b border-gray-200">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-lg font-semibold text-gray-900">Reportes de Propiedades</Text>
+            <TouchableOpacity
+              onPress={onExport}
+              className="bg-primary px-4 py-2 rounded-lg flex-row items-center gap-2"
+            >
+              <Ionicons name="download-outline" size={16} color="white" />
+              <Text className="text-white font-medium text-sm">Exportar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View className="p-8">
+          <View className="items-center">
+            <Ionicons name="document-text-outline" size={48} color="#9CA3AF" />
+            <Text className="text-gray-500 mt-3 text-center">No hay reportes disponibles</Text>
+            <Text className="text-gray-400 text-sm mt-1 text-center">Los reportes aparecerán aquí cuando tengas actividad en tus propiedades</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="bg-white rounded-xl shadow-sm">
@@ -164,42 +236,55 @@ function ReportsTable({ reports, isLoading, onExport }: { reports: ReportItem[];
         </View>
       </View>
 
-      {reports.length === 0 ? (
-        <View className="p-8">
-          <View className="items-center">
-            <Ionicons name="document-text-outline" size={48} color="#9CA3AF" />
-            <Text className="text-gray-500 mt-3 text-center">No hay reportes disponibles</Text>
-            <Text className="text-gray-400 text-sm mt-1 text-center">Los reportes aparecerán aquí cuando tengas actividad en tus propiedades</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View className="min-w-full">
+          <View className="flex-row bg-gray-50 p-3 border-b border-gray-200">
+            <Text className="w-48 text-xs font-semibold text-gray-700">Propiedad</Text>
+            <Text className="w-32 text-xs font-semibold text-gray-700">Tipo</Text>
+            <Text className="w-32 text-xs font-semibold text-gray-700">Estado</Text>
+            <Text className="w-32 text-xs font-semibold text-gray-700">Ingreso</Text>
+            <Text className="w-40 text-xs font-semibold text-gray-700">Inquilino</Text>
+            <Text className="w-32 text-xs font-semibold text-gray-700">Fecha Inicio</Text>
+            <Text className="w-32 text-xs font-semibold text-gray-700">Fecha Fin</Text>
           </View>
-        </View>
-      ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="min-w-full">
-            <View className="flex-row bg-gray-50 p-3 border-b border-gray-200">
-              <Text className="flex-1 text-xs font-semibold text-gray-700">Propiedad</Text>
-              <Text className="flex-1 text-xs font-semibold text-gray-700">Tipo</Text>
-              <Text className="flex-1 text-xs font-semibold text-gray-700">Estado</Text>
-              <Text className="flex-1 text-xs font-semibold text-gray-700">Ingreso</Text>
-              <Text className="flex-1 text-xs font-semibold text-gray-700">Inquilino</Text>
-              <Text className="flex-1 text-xs font-semibold text-gray-700">Fecha</Text>
-            </View>
-            {reports.map((item, index) => (
-              <View key={item.id} className={`flex-row p-3 border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                <Text className="flex-1 text-sm text-gray-900" numberOfLines={1}>{item.propertyName}</Text>
-                <Text className="flex-1 text-sm text-gray-600">{item.propertyType}</Text>
-                <View className="flex-1">
-                  <Text className={`text-xs px-2 py-1 rounded-full text-center ${getStatusColor(item.status)}`}>
-                    {item.status}
-                  </Text>
-                </View>
-                <Text className="flex-1 text-sm text-gray-900">Bs {item.income.toLocaleString()}</Text>
-                <Text className="flex-1 text-sm text-gray-600" numberOfLines={1}>{item.tenantName || 'N/A'}</Text>
-                <Text className="flex-1 text-sm text-gray-600">{formatDate(item.createdAt)}</Text>
+          {reports.map((item) => (
+            <View key={item.id} className="flex-row p-3 border-b border-gray-100 bg-white">
+              <View className="w-48">
+                <Text className="text-sm text-gray-900 font-medium" numberOfLines={1}>
+                  {item.property?.title || 'N/A'}
+                </Text>
+                <Text className="text-xs text-gray-500 mt-1" numberOfLines={1}>
+                  {item.property?.city || item.property?.address || ''}
+                </Text>
               </View>
-            ))}
-          </View>
-        </ScrollView>
-      )}
+              <View className="w-32 justify-center">
+                <Text className="text-sm text-gray-600">{item.type || 'N/A'}</Text>
+              </View>
+              <View className="w-32 justify-center">
+                <Text className={`text-xs px-2 py-1 rounded-full text-center ${getStatusColor(item.status)}`}>
+                  {item.status}
+                </Text>
+              </View>
+              <View className="w-32 justify-center">
+                <Text className="text-sm text-gray-900 font-semibold">
+                  Bs {Number(item.totalPrice || 0).toLocaleString()}
+                </Text>
+              </View>
+              <View className="w-40 justify-center">
+                <Text className="text-sm text-gray-600" numberOfLines={1}>
+                  {item.user?.fullName || item.user?.email || 'N/A'}
+                </Text>
+              </View>
+              <View className="w-32 justify-center">
+                <Text className="text-xs text-gray-600">{formatDate(item.startDate)}</Text>
+              </View>
+              <View className="w-32 justify-center">
+                <Text className="text-xs text-gray-600">{formatDate(item.finishDate)}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -241,7 +326,7 @@ export default function ReportsScreen() {
     );
   };
 
-  const stats = statsData?.data || {
+  const stats: PropertyStats = statsData?.data || {
     totalProperties: 0,
     availableCount: 0,
     rentedCount: 0,
@@ -251,7 +336,7 @@ export default function ReportsScreen() {
     totalReviews: 0,
   };
 
-  const reports = reportsData?.data || [];
+  const reports: ReportItem[] = Array.isArray(reportsData?.data) ? reportsData.data : [];
 
   return (
     <ScrollView
@@ -261,8 +346,8 @@ export default function ReportsScreen() {
       }
     >
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
-        <Ionicons name="bar-chart-outline" size={20} color="#fff" />
-        <Text className="text-white font-semibold text-lg">Reportes</Text>
+        <Logo size={20} />
+        <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
       <View className="p-4">

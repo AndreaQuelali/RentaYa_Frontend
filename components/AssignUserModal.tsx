@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, View, Text, TextInput, Pressable, TouchableOpacity } from "react-native";
+import { Modal, View, Text, TextInput, Pressable, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
@@ -13,18 +13,18 @@ type Props = {
     type: string;
     startDate: string;
     finishDate: string;
-    price: number;
+    totalPrice: number;
   }) => Promise<void>;
 };
 
 const modalidadOptions = [
-  { label: 'Alquiler', value: 'RENT' },
-  { label: 'Anticrético', value: 'ANTICRETIC' },
+  { label: 'Alquiler', value: 'alquiler' },
+  { label: 'Anticrético', value: 'anticrético' },
 ];
 
 export default function AssignUserModal({ visible, onClose, propertyId, onAssigned, onSubmit }: Props) {
   const [email, setEmail] = useState("");
-  const [modalidad, setModalidad] = useState('RENT');
+  const [modalidad, setModalidad] = useState('alquiler');
   const [startDate, setStartDate] = useState("");
   const [finishDate, setFinishDate] = useState("");
   const [price, setPrice] = useState("");
@@ -34,7 +34,7 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
 
   const reset = () => {
     setEmail("");
-    setModalidad('RENT');
+    setModalidad('alquiler');
     setStartDate("");
     setFinishDate("");
     setPrice("");
@@ -74,6 +74,15 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
       newErrors.dates = newErrors.dates ? newErrors.dates + "; fin inválida" : "Fecha de fin inválida (YYYY-MM-DD)";
     }
     
+    // Validar que la fecha de fin sea posterior a la de inicio
+    if (startDate && finishDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate) && /^\d{4}-\d{2}-\d{2}$/.test(finishDate)) {
+      const start = new Date(startDate);
+      const finish = new Date(finishDate);
+      if (finish <= start) {
+        newErrors.dates = "La fecha de fin debe ser posterior a la fecha de inicio";
+      }
+    }
+    
     if (!price.trim()) {
       newErrors.price = "El precio es requerido";
     } else if (isNaN(Number(price)) || Number(price) <= 0) {
@@ -85,13 +94,23 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
     
     try {
       setSubmitting(true);
+      
+      // Convertir fechas a formato ISO (añadir hora por defecto a medianoche)
+      const formatDateToISO = (date: string) => {
+        const dateObj = new Date(date + 'T00:00:00');
+        return dateObj.toISOString();
+      };
+      
+      const startDateTime = formatDateToISO(startDate);
+      const finishDateTime = formatDateToISO(finishDate);
+      
       await onSubmit({
         email: email.trim(),
         propertyId,
         type: modalidad,
-        startDate,
-        finishDate,
-        price: Number(price),
+        startDate: startDateTime,
+        finishDate: finishDateTime,
+        totalPrice: Number(price),
       });
       onAssigned?.();
       reset();
@@ -108,22 +127,33 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View className="flex-1 bg-black/40 items-center justify-end">
-        <View className="w-full bg-white rounded-t-2xl p-4">
-          <View className="flex-row items-center justify-between mb-4">
+        <View className="w-full bg-white rounded-t-2xl" style={{ maxHeight: '90%' }}>
+          <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
             <Text className="text-lg font-semibold">Asignar inquilino</Text>
             <TouchableOpacity onPress={onClose} disabled={submitting}>
               <Ionicons name="close" size={24} color="#6B7280" />
             </TouchableOpacity>
           </View>
 
-          <View className="gap-4">
+          <ScrollView 
+            showsVerticalScrollIndicator={false} 
+            contentContainerStyle={{ padding: 16 }}
+            style={{ maxHeight: 400 }}
+          >
+            <View style={{ gap: 16 }}>
             <View>
               <Text className="text-sm text-gray-600 mb-1 font-medium">Email *</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
                 placeholder="correo@ejemplo.com"
-                className={`border rounded-xl px-3 py-2 ${errors.email ? 'border-red-400' : 'border-gray-300'}`}
+                style={{
+                  borderWidth: 1,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderColor: errors.email ? '#f87171' : '#d1d5db',
+                }}
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
@@ -134,16 +164,25 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
               <Text className="text-sm text-gray-600 mb-1 font-medium">Modalidad *</Text>
               <TouchableOpacity
                 onPress={() => setShowDropdown(!showDropdown)}
-                className={`border rounded-xl px-3 py-2 flex-row items-center justify-between ${errors.modalidad ? 'border-red-400' : 'border-gray-300'}`}
+                style={{
+                  borderWidth: 1,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderColor: errors.modalidad ? '#f87171' : '#d1d5db',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
               >
-                <Text className={selectedModalidad ? 'text-gray-900' : 'text-gray-400'}>
+                <Text style={{ color: selectedModalidad ? '#111827' : '#9ca3af' }}>
                   {selectedModalidad?.label || 'Seleccionar modalidad'}
                 </Text>
                 <Ionicons name="chevron-down" size={16} color="#6B7280" />
               </TouchableOpacity>
               
               {showDropdown && (
-                <View className="absolute top-20 left-4 right-4 bg-white border border-gray-200 rounded-xl shadow-lg z-10">
+                <View className="mt-1 bg-white border border-gray-200 rounded-xl shadow-lg">
                   {modalidadOptions.map((option) => (
                     <TouchableOpacity
                       key={option.value}
@@ -151,7 +190,7 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
                         setModalidad(option.value);
                         setShowDropdown(false);
                       }}
-                      className="px-3 py-2 border-b border-gray-100 last:border-b-0"
+                      className="px-3 py-3 border-b border-gray-100 last:border-b-0"
                     >
                       <Text className="text-gray-900">{option.label}</Text>
                     </TouchableOpacity>
@@ -162,25 +201,36 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
               {errors.modalidad && <Text className="text-red-600 text-xs mt-1">{errors.modalidad}</Text>}
             </View>
 
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Inicio *</Text>
-                <TextInput
-                  value={startDate}
-                  onChangeText={setStartDate}
-                  placeholder="2025-12-31"
-                  className={`border rounded-xl px-3 py-2 ${errors.dates ? 'border-red-400' : 'border-gray-300'}`}
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Fin *</Text>
-                <TextInput
-                  value={finishDate}
-                  onChangeText={setFinishDate}
-                  placeholder="2026-12-31"
-                  className={`border rounded-xl px-3 py-2 ${errors.dates ? 'border-red-400' : 'border-gray-300'}`}
-                />
-              </View>
+            <View>
+              <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Inicio *</Text>
+              <TextInput
+                value={startDate}
+                onChangeText={setStartDate}
+                placeholder="2025-12-31"
+                style={{
+                  borderWidth: 1,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderColor: errors.dates ? '#f87171' : '#d1d5db',
+                }}
+              />
+            </View>
+            
+            <View>
+              <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Fin *</Text>
+              <TextInput
+                value={finishDate}
+                onChangeText={setFinishDate}
+                placeholder="2026-12-31"
+                style={{
+                  borderWidth: 1,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderColor: errors.dates ? '#f87171' : '#d1d5db',
+                }}
+              />
             </View>
             {errors.dates && <Text className="text-red-600 text-xs mt-1">{errors.dates}</Text>}
 
@@ -191,13 +241,20 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
                 onChangeText={setPrice}
                 placeholder="0.00"
                 keyboardType="numeric"
-                className={`border rounded-xl px-3 py-2 ${errors.price ? 'border-red-400' : 'border-gray-300'}`}
+                style={{
+                  borderWidth: 1,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderColor: errors.price ? '#f87171' : '#d1d5db',
+                }}
               />
               {errors.price && <Text className="text-red-600 text-xs mt-1">{errors.price}</Text>}
             </View>
-          </View>
+            </View>
+          </ScrollView>
 
-          <View className="flex-row gap-3 mt-6">
+          <View className="flex-row gap-3 p-4 border-t border-gray-200">
             <Pressable 
               className="flex-1 bg-gray-100 rounded-xl py-3 items-center" 
               onPress={onClose} 
