@@ -72,32 +72,54 @@ export default function PropertiesScreen() {
   };
 
   const handleAssignSubmit = async (payload: {
-    usernameOrEmail: string;
+    email: string;
     propertyId: string;
     type: string;
-    startDate?: Date;
-    finishDate?: Date;
-    totalPrice?: number;
+    startDate: string;
+    finishDate: string;
+    totalPrice: number;
   }) => {
     try {
-      // Fixed default user id as requested
-      const userId = 'e0911d9b-8fe6-4381-acc0-e6475be5c8c7';
-      // Coerce dates to YYYY-MM-DD if provided
-      const toYmd = (d?: Date) => (d ? new Date(d).toISOString().slice(0, 10) : undefined);
-      const body: any = {
+      const body = {
         propertyId: payload.propertyId,
-        type: payload.type,
+        totalPrice: payload.totalPrice,
         startDate: payload.startDate,
         finishDate: payload.finishDate,
-        price: payload.price,
+        email: payload.email,
       };
 
-      await api.post('/api/reports/email', body);
+      const response = await api.post('/api/reports/email', body);
+      
       Alert.alert("Éxito", "Inquilino asignado correctamente");
+      setAssignVisible(false);
+      setAssignPropertyId(null);
       fetchUserProperties();
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e?.message || 'No se pudo asignar el inquilino';
-      Alert.alert("Error", msg);
+      let errorMessage = 'No se pudo asignar el inquilino';
+      
+      if (e?.response) {
+        const status = e.response.status;
+        const data = e.response.data;
+        
+        // Si la respuesta es HTML (error 404, etc.), mostrar mensaje genérico
+        if (typeof data === 'string' && data.includes('<!DOCTYPE')) {
+          errorMessage = `Error del servidor (${status}). Verifica que el endpoint esté disponible.`;
+        } else if (data?.message) {
+          errorMessage = data.message;
+        } else if (status === 404) {
+          errorMessage = 'Endpoint no encontrado. Verifica la configuración del servidor.';
+        } else if (status === 400) {
+          errorMessage = 'Datos inválidos. Verifica los campos ingresados.';
+        } else if (status === 500) {
+          errorMessage = 'Error interno del servidor. Intenta más tarde.';
+        } else {
+          errorMessage = `Error ${status}: ${data?.error || 'Error desconocido'}`;
+        }
+      } else if (e?.message) {
+        errorMessage = e.message;
+      }
+      
+      Alert.alert("Error", errorMessage);
     }
   };
 
