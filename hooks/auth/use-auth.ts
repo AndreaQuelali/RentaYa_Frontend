@@ -41,10 +41,11 @@ export function useAuth() {
         const storedUser = await storage.getUser();
 
         try {
-          const response = await api.get("/api/auth/refresh-token");
+          // Usar el endpoint correcto para obtener el perfil del usuario actual
+          const response = await api.get("/api/users/profile");
           const userData = response.data.success
-            ? response.data.data.user
-            : response.data.user;
+            ? response.data.data
+            : response.data;
 
           if (userData) {
             await storage.setUser(userData);

@@ -139,7 +139,10 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={18} color="#6B7280" />
             </Pressable>
 
-            <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
+            <Pressable 
+              className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3"
+              onPress={() => router.push("/(tabs)/notifications")}
+            >
               <View className="flex-row items-center gap-2">
                 <Ionicons name="notifications-outline" size={18} />
                 <Text className="text-base">Notificaciones</Text>

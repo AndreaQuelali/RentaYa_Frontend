@@ -95,7 +95,7 @@ api.interceptors.response.use(
       }
 
       const response = await axios.post(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/refresh`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/refresh-token`,
         { refreshToken },
         {
           headers: {

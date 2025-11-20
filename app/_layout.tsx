@@ -10,6 +10,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ModeProvider } from "@/context/ModeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { UserProfileProvider } from "@/context/UserProfileContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth/use-auth";
@@ -136,12 +137,14 @@ export default function RootLayout() {
       <ModeProvider>
         <AuthProvider>
           <UserProfileProvider>
-            <ThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              <RootLayoutNav />
-              <StatusBar style="auto" />
-            </ThemeProvider>
+            <NotificationProvider>
+              <ThemeProvider
+                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+              >
+                <RootLayoutNav />
+                <StatusBar style="auto" />
+              </ThemeProvider>
+            </NotificationProvider>
           </UserProfileProvider>
         </AuthProvider>
       </ModeProvider>
