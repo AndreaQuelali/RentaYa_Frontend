@@ -7,6 +7,7 @@ import React, {
   ReactNode,
 } from "react";
 import { notificationApi } from "@/lib/notificationApi";
+import { useAuth } from "@/hooks/auth/use-auth";
 
 interface NotificationContextType {
   unreadCount: number;
@@ -21,6 +22,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [unreadCount, setUnreadCount] = useState(0);
+  const { user } = useAuth();
 
   const refreshUnreadCount = useCallback(async () => {
     try {
@@ -40,13 +42,17 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
     refreshUnreadCount();
 
-    // Actualizar cada 30 segundos
     const interval = setInterval(refreshUnreadCount, 30000);
 
     return () => clearInterval(interval);
-  }, [refreshUnreadCount]);
+  }, [user, refreshUnreadCount]);
 
   return (
     <NotificationContext.Provider
