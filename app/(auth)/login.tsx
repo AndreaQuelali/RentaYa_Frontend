@@ -63,11 +63,13 @@ export default function LoginScreen() {
               />
 
               <View className="items-end">
-                <Pressable>
-                  <Text className="text-primary font-medium text-sm">
-                    ¿Olvidaste tu contraseña?
-                  </Text>
-                </Pressable>
+                <Link href="/(auth)/forgot-password" asChild>
+                  <Pressable>
+                    <Text className="text-primary font-medium text-sm">
+                      ¿Olvidaste tu contraseña?
+                    </Text>
+                  </Pressable>
+                </Link>
               </View>
             </View>
 
