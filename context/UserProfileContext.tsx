@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth as useAuthHook } from '@/hooks/auth/use-auth';
+import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 
 interface UserProfile {
@@ -29,7 +29,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuthHook();
+  const { isAuthenticated } = useAuth();
 
   const fetchProfile = React.useCallback(async () => {
     if (!isAuthenticated) {

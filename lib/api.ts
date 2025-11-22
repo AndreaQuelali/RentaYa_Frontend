@@ -1,6 +1,5 @@
 import axios from "axios";
 import { storage } from "./storage";
-import { router } from "expo-router";
 
 export const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000",
@@ -62,12 +61,7 @@ api.interceptors.response.use(
     if (originalRequest.url?.includes("/auth/refresh")) {
       await storage.clear();
       isRefreshing = false;
-      processQueue(error, null);
-
-      setTimeout(() => {
-        router.replace("/");
-      }, 100);
-
+      failedQueue = [];
       return Promise.reject(error);
     }
 
@@ -91,7 +85,10 @@ api.interceptors.response.use(
       const refreshToken = await storage.getRefreshToken();
 
       if (!refreshToken) {
-        throw new Error("No refresh token available");
+        isRefreshing = false;
+        failedQueue = [];
+        await storage.clear();
+        return Promise.reject(new Error("No refresh token available"));
       }
 
       const response = await axios.post(
@@ -121,14 +118,9 @@ api.interceptors.response.use(
     } catch (refreshError) {
       console.error("Token refresh failed:", refreshError);
 
-      processQueue(refreshError as Error, null);
       isRefreshing = false;
-
+      failedQueue = [];
       await storage.clear();
-
-      setTimeout(() => {
-        router.replace("/");
-      }, 100);
 
       return Promise.reject(refreshError);
     }
