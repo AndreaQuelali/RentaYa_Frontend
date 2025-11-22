@@ -61,7 +61,7 @@ export const useNavigationHelper = () => {
   }, [segments]);
 
   const isInAuthFlow = useCallback(() => {
-    return segments[0] === "(auth)" || segments[0] === "index";
+    return segments[0] === "(auth)";
   }, [segments]);
 
   const isInTabs = useCallback(() => {

@@ -12,6 +12,8 @@ export default function AuthLayout() {
         <Stack.Screen name="code" options={{ headerShown: false }} />
         <Stack.Screen name="signin-options" options={{ headerShown: false }} />
         <Stack.Screen name="signin-google" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="preferences" options={{ headerShown: false }} />
       </Stack>
     </>
   );
