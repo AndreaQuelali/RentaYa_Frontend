@@ -3,7 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "@/global.css";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -21,35 +21,23 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
-  const segments = useSegments();
   const router = useRouter();
+
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) {
+      return;
+    }
 
-    const timer = setTimeout(() => {
-      const pathString = segments.join("/");
-
-      if (!user) {
-        if (
-          pathString.startsWith("(tabs)") ||
-          pathString.startsWith("settings") ||
-          pathString.startsWith("property")
-        ) {
-          router.replace("/");
-        }
+    if (user) {
+      if ((user as any)?.role === "arrendador") {
+        router.replace("/(tabs)/properties");
       } else {
-        if (
-          pathString === "" ||
-          pathString.startsWith("(auth)") ||
-          pathString === "index"
-        ) {
-          router.replace("/(tabs)");
-        }
+        router.replace("/(tabs)");
       }
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [user, isLoading, segments, router]);
+    } else {
+      router.replace("/");
+    }
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
