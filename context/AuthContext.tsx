@@ -1,73 +1,24 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-interface User {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-}
+import React, { createContext, useContext } from 'react';
+import { useAuthV2, User } from '@/hooks/auth/use-auth-v2';
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-  signInWithGoogle: (userData: User) => Promise<void>;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  loginMutation: any;
+  googleLoginMutation: any;
+  // convenience aliases used across the app
+  login?: any;
+  googleLogin?: any;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = '@rentaya_user';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const auth = useAuthV2();
 
-  useEffect(() => {
-    loadStoredUser();
-  }, []);
-
-  const loadStoredUser = async () => {
-    try {
-      const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error('Error loading stored user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signInWithGoogle = async (userData: User) => {
-    try {
-      setUser(userData);
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
-    } catch (error) {
-      console.error('Error storing user data:', error);
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setUser(null);
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  const value = {
-    user,
-    loading,
-    signOut,
-    signInWithGoogle,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

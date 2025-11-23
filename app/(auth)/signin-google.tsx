@@ -4,7 +4,7 @@ import Logo from '@/assets/logo';
 import { useEffect, useState } from 'react';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { configureGoogleSignIn } from '../../config/google';
-import { useAuth } from '@/hooks/auth/use-auth';
+import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 type Role = 'rentante' | 'arrendador' | null;

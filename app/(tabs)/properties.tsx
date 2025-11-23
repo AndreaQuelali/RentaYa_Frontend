@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -23,7 +24,6 @@ import { UserProperty } from "@/types/property";
 import Logo from "@/assets/logo";
 import AssignUserModal from "@/components/AssignUserModal";
 import { api } from "@/lib/api";
-import { Alert } from "react-native";
 
 export default function PropertiesScreen() {
   const [showForm, setShowForm] = useState(false);
@@ -101,7 +101,6 @@ export default function PropertiesScreen() {
         const status = e.response.status;
         const data = e.response.data;
         
-        // Si la respuesta es HTML (error 404, etc.), mostrar mensaje genérico
         if (typeof data === 'string' && data.includes('<!DOCTYPE')) {
           errorMessage = `Error del servidor (${status}). Verifica que el endpoint esté disponible.`;
         } else if (data?.message) {
