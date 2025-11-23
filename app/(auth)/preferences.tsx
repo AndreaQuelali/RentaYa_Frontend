@@ -1,11 +1,20 @@
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import SelectableChip from "@/components/SelectableChip";
 import StepIndicator from "@/components/StepIndicator";
 import { useSavePreferences } from "@/hooks/auth/use-preferences";
-import { PROPERTY_TYPES, OPERATION_MODES } from "@/constants/propertyOptions";
-import { PROVINCIAS } from "@/constants/provinces";
+import {
+  useOperationTypes,
+  usePropertyTypes,
+  useProvinces,
+} from "@/hooks/property/use-catalogs";
 
 export default function PreferencesScreen() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -17,25 +26,37 @@ export default function PreferencesScreen() {
 
   const { mutate: savePreferences, isPending } = useSavePreferences();
 
-  const propertyTypes = [...PROPERTY_TYPES];
-  const modalities = OPERATION_MODES.filter((m) => m !== "Venta"); // Solo Alquiler y Anticrético
-  const locations = PROVINCIAS;
+  // Obtener datos del backend
+  const { data: propertyTypesData, isLoading: isLoadingPropertyTypes } =
+    usePropertyTypes();
+  const { data: operationTypesData, isLoading: isLoadingOperationTypes } =
+    useOperationTypes();
+  const { data: provincesData, isLoading: isLoadingProvinces } = useProvinces();
 
-  const togglePropertyType = (type: string) => {
+  // Filtrar solo Alquiler y Anticrético (excluir Venta)
+  const modalities =
+    operationTypesData?.filter(
+      (op) => op.name !== "Venta" && op.name !== "venta"
+    ) || [];
+  const propertyTypes = propertyTypesData || [];
+  const locations = provincesData || [];
+
+  const isLoading =
+    isLoadingPropertyTypes || isLoadingOperationTypes || isLoadingProvinces;
+
+  const togglePropertyType = (id: string) => {
     setSelectedPropertyTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
     );
   };
 
-  const selectModality = (modality: string) => {
-    setSelectedModality(modality);
+  const selectModality = (id: string) => {
+    setSelectedModality(id);
   };
 
-  const toggleLocation = (location: string) => {
+  const toggleLocation = (id: string) => {
     setSelectedLocations((prev) =>
-      prev.includes(location)
-        ? prev.filter((l) => l !== location)
-        : [...prev, location]
+      prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]
     );
   };
 
@@ -54,11 +75,11 @@ export default function PreferencesScreen() {
   };
 
   const handleFinish = () => {
-    // Enviar preferencias al backend
+    // Enviar preferencias al backend (ya son IDs)
     const preferences = {
-      propertyTypes: selectedPropertyTypes,
-      modality: selectedModality || undefined,
-      locations: selectedLocations,
+      propertyTypes: selectedPropertyTypes, // IDs
+      modality: selectedModality || undefined, // ID
+      locations: selectedLocations, // IDs
     };
 
     savePreferences(preferences);
@@ -104,16 +125,25 @@ export default function PreferencesScreen() {
   };
 
   const renderStepContent = () => {
+    if (isLoading) {
+      return (
+        <View className="flex-1 items-center justify-center py-20">
+          <ActivityIndicator size="large" color="#D65E48" />
+          <Text className="text-gray-600 mt-4">Cargando opciones...</Text>
+        </View>
+      );
+    }
+
     switch (currentStep) {
       case 1:
         return (
           <View className="flex-row flex-wrap gap-2 justify-center">
             {propertyTypes.map((type) => (
               <SelectableChip
-                key={type}
-                label={type}
-                selected={selectedPropertyTypes.includes(type)}
-                onPress={() => togglePropertyType(type)}
+                key={type.id}
+                label={type.name}
+                selected={selectedPropertyTypes.includes(type.id)}
+                onPress={() => togglePropertyType(type.id)}
               />
             ))}
           </View>
@@ -123,10 +153,10 @@ export default function PreferencesScreen() {
           <View className="flex-row flex-wrap gap-2 justify-center">
             {modalities.map((modality) => (
               <SelectableChip
-                key={modality}
-                label={modality}
-                selected={selectedModality === modality}
-                onPress={() => selectModality(modality)}
+                key={modality.id}
+                label={modality.name}
+                selected={selectedModality === modality.id}
+                onPress={() => selectModality(modality.id)}
               />
             ))}
           </View>
@@ -136,10 +166,10 @@ export default function PreferencesScreen() {
           <View className="flex-row flex-wrap gap-2 justify-center">
             {locations.map((location) => (
               <SelectableChip
-                key={location}
-                label={location}
-                selected={selectedLocations.includes(location)}
-                onPress={() => toggleLocation(location)}
+                key={location.id}
+                label={location.name}
+                selected={selectedLocations.includes(location.id)}
+                onPress={() => toggleLocation(location.id)}
               />
             ))}
           </View>
@@ -194,12 +224,7 @@ export default function PreferencesScreen() {
                 </Text>
               </View>
 
-              <ScrollView
-                className="flex-1 mb-4"
-                showsVerticalScrollIndicator={false}
-              >
-                {renderStepContent()}
-              </ScrollView>
+              <View className="flex-1 mb-4">{renderStepContent()}</View>
             </View>
 
             <View className="gap-3 mt-auto pt-4">

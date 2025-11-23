@@ -15,11 +15,20 @@ interface PropertyFormData {
   photos: string[];
   latitude?: number;
   longitude?: number;
+  paymentType?: string;
+}
+
+interface CatalogData {
+  propertyTypes?: Array<{ id: string; name: string }>;
+  operationTypes?: Array<{ id: string; name: string }>;
+  provinces?: Array<{ id: string; name: string }>;
+  paymentTypes?: Array<{ id: string; name: string }>;
 }
 
 interface UsePropertyFormProps {
   propertyToEdit?: UserProperty | null;
   onSuccess?: () => void;
+  catalogs?: CatalogData;
 }
 
 const OPERATION_TYPE_MAP: { [key: string]: string } = {
@@ -47,6 +56,7 @@ const normalizeDealMode = (mode: string): string => {
 export const usePropertyForm = ({
   propertyToEdit,
   onSuccess,
+  catalogs,
 }: UsePropertyFormProps) => {
   const [formData, setFormData] = useState<PropertyFormData>({
     title: "",
@@ -60,6 +70,7 @@ export const usePropertyForm = ({
     photos: [],
     latitude: undefined,
     longitude: undefined,
+    paymentType: "",
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -122,19 +133,20 @@ export const usePropertyForm = ({
   };
 
   const resetForm = () => {
-    setFormData({
-      title: "",
-      city: "",
-      type: "",
-      price: "",
-      dealMode: "",
-      description: "",
-      address: "",
-      area: "",
-      photos: [],
-      latitude: undefined,
-      longitude: undefined,
-    });
+      setFormData({
+        title: "",
+        city: "",
+        type: "",
+        price: "",
+        dealMode: "",
+        description: "",
+        address: "",
+        area: "",
+        photos: [],
+        latitude: undefined,
+        longitude: undefined,
+        paymentType: "",
+      });
     setOriginalPhotos([]);
   };
 
@@ -164,10 +176,49 @@ export const usePropertyForm = ({
           bathrooms: propertyToEdit?.bathrooms || 1,
           areaM2: areaM2,
           price: Number(formData.price),
-          operationType: tipoOperacion,
           latitude: formData.latitude || null,
           longitude: formData.longitude || null,
         };
+
+        // Convertir nombres a IDs si hay catálogos disponibles
+        if (catalogs?.operationTypes && formData.dealMode) {
+          const operationType = catalogs.operationTypes.find(
+            (ot) => ot.name === formData.dealMode
+          );
+          if (operationType) {
+            payload.operationTypeId = operationType.id;
+          }
+        } else {
+          // Fallback al método anterior si no hay catálogos
+          payload.operationType = tipoOperacion;
+        }
+
+        if (catalogs?.propertyTypes && formData.type) {
+          const propertyType = catalogs.propertyTypes.find(
+            (pt) => pt.name === formData.type
+          );
+          if (propertyType) {
+            payload.propertyTypeId = propertyType.id;
+          }
+        }
+
+        if (catalogs?.provinces && formData.city) {
+          const province = catalogs.provinces.find(
+            (p) => p.name === formData.city
+          );
+          if (province) {
+            payload.provinceId = province.id;
+          }
+        }
+
+        if (catalogs?.paymentTypes && formData.paymentType) {
+          const paymentType = catalogs.paymentTypes.find(
+            (pt) => pt.name === formData.paymentType
+          );
+          if (paymentType) {
+            payload.paymentId = paymentType.id;
+          }
+        }
 
         const currentPhotos = formData.photos || [];
         const photosToRemove = originalPhotos.filter(
@@ -211,7 +262,46 @@ export const usePropertyForm = ({
         formDataToSend.append("areaM2", areaM2.toString());
 
         formDataToSend.append("price", formData.price);
-        formDataToSend.append("operationType", tipoOperacion);
+
+        // Convertir nombres a IDs si hay catálogos disponibles
+        if (catalogs?.operationTypes && formData.dealMode) {
+          const operationType = catalogs.operationTypes.find(
+            (ot) => ot.name === formData.dealMode
+          );
+          if (operationType) {
+            formDataToSend.append("operationTypeId", operationType.id);
+          }
+        } else {
+          // Fallback al método anterior si no hay catálogos
+          formDataToSend.append("operationType", tipoOperacion);
+        }
+
+        if (catalogs?.propertyTypes && formData.type) {
+          const propertyType = catalogs.propertyTypes.find(
+            (pt) => pt.name === formData.type
+          );
+          if (propertyType) {
+            formDataToSend.append("propertyTypeId", propertyType.id);
+          }
+        }
+
+        if (catalogs?.provinces && formData.city) {
+          const province = catalogs.provinces.find(
+            (p) => p.name === formData.city
+          );
+          if (province) {
+            formDataToSend.append("provinceId", province.id);
+          }
+        }
+
+        if (catalogs?.paymentTypes && formData.paymentType) {
+          const paymentType = catalogs.paymentTypes.find(
+            (pt) => pt.name === formData.paymentType
+          );
+          if (paymentType) {
+            formDataToSend.append("paymentId", paymentType.id);
+          }
+        }
 
         if (formData.latitude && formData.longitude) {
           formDataToSend.append("latitude", formData.latitude.toString());

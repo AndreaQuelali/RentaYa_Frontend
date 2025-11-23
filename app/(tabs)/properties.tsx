@@ -23,7 +23,6 @@ import {
 import { UserProperty } from "@/types/property";
 import Logo from "@/assets/logo";
 import AssignUserModal from "@/components/AssignUserModal";
-import { api } from "@/lib/api";
 
 export default function PropertiesScreen() {
   const [showForm, setShowForm] = useState(false);
@@ -79,17 +78,7 @@ export default function PropertiesScreen() {
     finishDate: string;
     totalPrice: number;
   }) => {
-    try {
-      const body = {
-        propertyId: payload.propertyId,
-        totalPrice: payload.totalPrice,
-        startDate: payload.startDate,
-        finishDate: payload.finishDate,
-        email: payload.email,
-      };
-
-      const response = await api.post('/api/reports/email', body);
-      
+    try { 
       Alert.alert("Éxito", "Inquilino asignado correctamente");
       setAssignVisible(false);
       setAssignPropertyId(null);
@@ -184,16 +173,6 @@ export default function PropertiesScreen() {
               </Text>
 
               <View className="flex-row gap-2">
-                <Pressable
-                  className="p-2"
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    setAssignPropertyId(property.id);
-                    setAssignVisible(true);
-                  }}
-                >
-                  <Ionicons name="person-add-outline" size={20} color="#D65E48" />
-                </Pressable>
                 <Pressable
                   className="p-2"
                   onPress={(e) => {
