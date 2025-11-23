@@ -49,3 +49,16 @@ export function useProvinces() {
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 }
+
+export function usePaymentTypes() {
+  return useQuery<CatalogItem[], Error>({
+    queryKey: ["payment-types"],
+    queryFn: async () => {
+      const response = await api.get<CatalogsResponse>(
+        "/api/payments"
+      );
+      return response.data.data;
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+}
