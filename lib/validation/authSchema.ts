@@ -20,6 +20,10 @@ export const registerSchema = z.object({
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
         'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número y un carácter especial'
     ),
+    role: z
+    .enum(['rentante', 'arrendador'], {
+        errorMap: () => ({ message: 'Debes seleccionar un rol válido' })
+    }),
 });
 
 export const loginSchema = z.object({

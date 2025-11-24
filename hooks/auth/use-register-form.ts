@@ -13,6 +13,7 @@ export function useRegisterForm() {
             phone: '',
             email: '',
             password: '',
+            role: undefined,
         },
     });
 

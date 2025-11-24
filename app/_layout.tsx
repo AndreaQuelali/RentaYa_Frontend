@@ -3,13 +3,13 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "@/global.css";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { ModeProvider } from "@/context/ModeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { UserProfileProvider } from "@/context/UserProfileContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth/use-auth";
@@ -21,39 +21,25 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
-  const segments = useSegments();
   const router = useRouter();
-  const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) {
+      return;
+    }
 
-    const inAuthGroup = segments[0] === "(auth)";
-    const inTabsGroup = segments[0] === "(tabs)";
-    const isIndex = segments.length === 0 || segments[0] === "index";
-
-    if (!user) {
-      if (
-        inTabsGroup ||
-        segments[0] === "settings" ||
-        segments[0] === "property"
-      ) {
-        router.replace("/");
+    if (user) {
+      if ((user as any)?.role === "arrendador") {
+        router.replace("/(tabs)/properties");
+      } else {
+        router.replace("/(tabs)");
       }
-      setIsNavigationReady(true);
-      return;
+    } else {
+      router.replace("/");
     }
+  }, [user, isLoading, router]);
 
-    if (user && (isIndex || inAuthGroup)) {
-      router.replace("/(tabs)");
-      setIsNavigationReady(true);
-      return;
-    }
-
-    setIsNavigationReady(true);
-  }, [user, isLoading, segments]);
-
-  if (isLoading || !isNavigationReady) {
+  if (isLoading) {
     return (
       <View className="flex-1 bg-white items-center justify-center">
         <ActivityIndicator size="large" color="#D65E48" />
@@ -133,18 +119,18 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ModeProvider>
-        <AuthProvider>
-          <UserProfileProvider>
+      <AuthProvider>
+        <UserProfileProvider>
+          <NotificationProvider>
             <ThemeProvider
               value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
             >
               <RootLayoutNav />
               <StatusBar style="auto" />
             </ThemeProvider>
-          </UserProfileProvider>
-        </AuthProvider>
-      </ModeProvider>
+          </NotificationProvider>
+        </UserProfileProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

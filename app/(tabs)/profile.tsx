@@ -2,14 +2,12 @@ import React from "react";
 import {
   View,
   Text,
-  Switch,
   Pressable,
   Alert,
   Image,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useMode } from "@/context/ModeContext";
 import { useAuth } from "@/hooks/auth/use-auth";
 import { useUserProfile } from "@/context/UserProfileContext";
 import { useProfileImage } from "@/hooks/profile/use-profile-image";
@@ -17,20 +15,13 @@ import { router } from "expo-router";
 import Logo from "@/assets/logo";
 
 export default function ProfileScreen() {
-  const { mode, toggle } = useMode();
   const { user, logout } = useAuth();
   const { profile, loading } = useUserProfile();
   const { uploading, selectImageSource } = useProfileImage();
-  const isOwner = mode === "owner";
-
-  const onToggle = () => {
-    toggle();
-    if (mode === "user") {
-      router.push("/(tabs)/properties");
-    } else {
-      router.push("/(tabs)");
-    }
-  };
+  
+  const userRole = user?.role;
+  const isArrendador = userRole === "arrendador";
+  const roleLabel = isArrendador ? "Arrendador" : "Rentante";
 
   const handleSignOut = () => {
     Alert.alert(
@@ -106,22 +97,26 @@ export default function ProfileScreen() {
           </View>
 
           <View className="mb-2">
-            <Text className="text-gray-600 text-base mb-2">Modo de usuario</Text>
+            <Text className="text-gray-600 text-base mb-2">Tipo de cuenta</Text>
             <View className="flex-row items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
               <View className="flex-row items-center gap-2">
                 <Ionicons
-                  name="person-circle-outline"
+                  name={isArrendador ? "home" : "search"}
                   size={18}
-                  color="#11181C"
+                  color="#D65E48"
                 />
                 <Text className="font-medium">
-                  {isOwner ? "Propietario" : "Usuario"}
+                  {roleLabel}
                 </Text>
               </View>
-              <Switch value={isOwner} onValueChange={onToggle} thumbColor={"#D65E48"} trackColor={{true: "#D65E48" }} />
+              <View className="bg-primary/10 px-3 py-1 rounded-full">
+                <Text className="text-primary text-xs font-semibold">
+                  {isArrendador ? "Publicar propiedades" : "Buscar propiedades"}
+                </Text>
+              </View>
             </View>
             <Text className="text-gray-500 text-base mt-2">
-              {isOwner
+              {isArrendador
                 ? "Puedes publicar y administrar tus propiedades."
                 : "Puedes buscar y contactar propietarios."}
             </Text>
@@ -139,7 +134,10 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={18} color="#6B7280" />
             </Pressable>
 
-            <Pressable className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3">
+            <Pressable 
+              className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-3"
+              onPress={() => router.push("/(tabs)/notifications")}
+            >
               <View className="flex-row items-center gap-2">
                 <Ionicons name="notifications-outline" size={18} />
                 <Text className="text-base">Notificaciones</Text>

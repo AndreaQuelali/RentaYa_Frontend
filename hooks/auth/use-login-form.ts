@@ -4,7 +4,7 @@ import { loginSchema, type LoginFormData } from '@/lib/validation/authSchema';
 import { useAuth } from './use-auth';
 
 export function useLoginForm() {
-  const { login } = useAuth();
+  const { loginMutation } = useAuth();
   
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -16,7 +16,7 @@ export function useLoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login.mutateAsync(data);
+      await loginMutation.mutateAsync(data);
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -25,6 +25,6 @@ export function useLoginForm() {
   return {
     form,
     onSubmit,
-    isLoading: login.isPending,
+    isLoading: loginMutation.isLoading,
   };
 }
