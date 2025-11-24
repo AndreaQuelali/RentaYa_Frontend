@@ -1,5 +1,5 @@
-import { Tabs } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { Tabs, useFocusEffect } from "expo-router";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text } from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
@@ -13,7 +13,7 @@ import { storage } from "@/lib/storage";
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user } = useAuth();
-  const { unreadCount } = useNotificationContext();
+  const { unreadCount, refreshUnreadCount } = useNotificationContext();
   const [storedUserRole, setStoredUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,6 +32,15 @@ export default function TabLayout() {
 
   const userRole = user?.role || storedUserRole;
   const isArrendador = userRole === "arrendador";
+
+  // Actualizar contador cuando se enfoca cualquier tab
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        refreshUnreadCount();
+      }
+    }, [user, refreshUnreadCount])
+  );
 
   const NotificationIconWithBadge = ({
     color,
