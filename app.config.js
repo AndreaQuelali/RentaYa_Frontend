@@ -3,7 +3,7 @@ const IS_DEV = process.env.APP_VARIANT === 'development';
 export default {
   expo: {
     name: IS_DEV ? 'RentaYa (Dev)' : 'RentaYa',
-    slug: 'rentaya-mobile',
+    slug: 'mobile',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
