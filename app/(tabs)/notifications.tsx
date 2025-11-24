@@ -9,15 +9,18 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import Logo from "@/assets/logo";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationItem } from "@/components/NotificationItem";
 import { NotificationType } from "@/types/notification";
+import { useNotificationContext } from "@/context/NotificationContext";
 
 type FilterType = "all" | "unread" | NotificationType;
 
 export default function NotificationsScreen() {
   const [filter, setFilter] = useState<FilterType>("all");
+  const { refreshUnreadCount } = useNotificationContext();
   
   const filterConfig = filter === "all" 
     ? undefined 
@@ -36,6 +39,13 @@ export default function NotificationsScreen() {
     deleteNotification,
     deleteAllNotifications,
   } = useNotifications(filterConfig);
+
+  // Actualizar contador cuando se enfoca la pantalla
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshUnreadCount();
+    }, [refreshUnreadCount])
+  );
 
   const handleMarkAllAsRead = () => {
     if (unreadCount === 0) {

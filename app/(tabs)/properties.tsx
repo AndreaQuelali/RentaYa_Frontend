@@ -23,35 +23,65 @@ import {
 import { UserProperty } from "@/types/property";
 import Logo from "@/assets/logo";
 import AssignUserModal from "@/components/AssignUserModal";
+import LoadingOverlay from "@/components/LoadingOverlay";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function PropertiesScreen() {
   const [showForm, setShowForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<UserProperty | null>(
-    null,
+    null
   );
   const [assignVisible, setAssignVisible] = useState(false);
   const [assignPropertyId, setAssignPropertyId] = useState<string | null>(null);
+  const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
 
-  const { properties, loading, error, fetchUserProperties, deleteProperty } =
-    useUserProperties();
+  const {
+    properties,
+    loading,
+    error,
+    initialLoad,
+    deletingPropertyId,
+    fetchUserProperties,
+    deleteProperty,
+  } = useUserProperties();
 
   useFocusEffect(
     React.useCallback(() => {
       fetchUserProperties();
-    }, []),
+    }, [fetchUserProperties])
   );
 
   const handlePropertyPress = (propertyId: string) => {
     router.push(`/property/${propertyId}`);
   };
 
-  const handleDeleteProperty = async (propertyId: string) => {
-    const success = await deleteProperty(propertyId);
+  const handleDeleteProperty = (propertyId: string) => {
+    setPropertyToDelete(propertyId);
+    setConfirmDeleteVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!propertyToDelete) return;
+
+    setConfirmDeleteVisible(false);
+    const success = await deleteProperty(propertyToDelete);
+
     if (success) {
       Alert.alert("Éxito", "Propiedad eliminada correctamente");
     } else {
-      Alert.alert("Error", "No se pudo eliminar la propiedad. Intenta de nuevo.");
+      Alert.alert(
+        "Error",
+        "No se pudo eliminar la propiedad. Intenta de nuevo."
+      );
     }
+
+    setPropertyToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setConfirmDeleteVisible(false);
+    setPropertyToDelete(null);
   };
 
   const handleEditProperty = (property: UserProperty) => {
@@ -78,35 +108,36 @@ export default function PropertiesScreen() {
     finishDate: string;
     totalPrice: number;
   }) => {
-    try { 
+    try {
       Alert.alert("Éxito", "Inquilino asignado correctamente");
       setAssignVisible(false);
       setAssignPropertyId(null);
       fetchUserProperties();
     } catch (e: any) {
-      let errorMessage = 'No se pudo asignar el inquilino';
-      
+      let errorMessage = "No se pudo asignar el inquilino";
+
       if (e?.response) {
         const status = e.response.status;
         const data = e.response.data;
-        
-        if (typeof data === 'string' && data.includes('<!DOCTYPE')) {
+
+        if (typeof data === "string" && data.includes("<!DOCTYPE")) {
           errorMessage = `Error del servidor (${status}). Verifica que el endpoint esté disponible.`;
         } else if (data?.message) {
           errorMessage = data.message;
         } else if (status === 404) {
-          errorMessage = 'Endpoint no encontrado. Verifica la configuración del servidor.';
+          errorMessage =
+            "Endpoint no encontrado. Verifica la configuración del servidor.";
         } else if (status === 400) {
-          errorMessage = 'Datos inválidos. Verifica los campos ingresados.';
+          errorMessage = "Datos inválidos. Verifica los campos ingresados.";
         } else if (status === 500) {
-          errorMessage = 'Error interno del servidor. Intenta más tarde.';
+          errorMessage = "Error interno del servidor. Intenta más tarde.";
         } else {
-          errorMessage = `Error ${status}: ${data?.error || 'Error desconocido'}`;
+          errorMessage = `Error ${status}: ${data?.error || "Error desconocido"}`;
         }
       } else if (e?.message) {
         errorMessage = e.message;
       }
-      
+
       Alert.alert("Error", errorMessage);
     }
   };
@@ -210,7 +241,7 @@ export default function PropertiesScreen() {
             <Ionicons name="chevron-back" size={22} color="#fff" />
           </Pressable>
         ) : (
-        <Logo size={20} />
+          <Logo size={20} />
         )}
         <Text className="text-white font-semibold text-lg">
           {showForm
@@ -266,14 +297,13 @@ export default function PropertiesScreen() {
               </View>
             )}
 
-            {!loading && !error && properties.length === 0 && (
+            {!loading && !error && properties.length === 0 && !initialLoad && (
               <View className="mt-10 items-center">
                 <Ionicons name="home-outline" size={64} color="#D1D5DB" />
                 <Text className="text-gray-500 text-center mb-4 mt-4">
                   Aún no tienes propiedades publicadas.{"\n"}¡Empieza ahora y
                   publica tu primera propiedad!
                 </Text>
-                
               </View>
             )}
 
@@ -294,6 +324,20 @@ export default function PropertiesScreen() {
         onClose={() => setAssignVisible(false)}
         propertyId={assignPropertyId}
         onSubmit={handleAssignSubmit}
+      />
+      <LoadingOverlay
+        visible={deletingPropertyId !== null}
+        message="Eliminando propiedad..."
+      />
+      <ConfirmDialog
+        visible={confirmDeleteVisible}
+        title="¿Eliminar propiedad?"
+        message="Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar esta propiedad?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        confirmColor="#EF4444"
       />
     </KeyboardAvoidingView>
   );
