@@ -27,11 +27,18 @@ export interface Property {
   price: string;
   latitude?: number | null;
   longitude?: number | null;
-  operationType: string;
+  operationType: string | { id: string; name: string } | null;
   status: string;
   createdAt: any;
   updatedAt: any;
   propertyPhotos: PropertyPhoto[];
+  operationTypeId?: string | null;
+  propertyTypeId?: string | null;
+  paymentId?: string | null;
+  provinceId?: string | null;
+  propertyType?: { id: string; name: string } | null;
+  payment?: { id: string; name: string } | null;
+  province?: { id: string; name: string } | null;
 }
 
 export interface PropertyDetail extends Property {
