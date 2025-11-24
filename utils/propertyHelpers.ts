@@ -13,17 +13,33 @@ export const translateStatus = (status: string): string => {
   return statusMap[status] || status;
 };
 
-export const getOperationTypeLabel = (operationType: string): string => {
-  const labels: { [key: string]: string } = {
-    rent: "Alquiler",
-    sale: "Venta",
-    both: "Anticrético",
-    RENT: "Alquiler",
-    SALE: "Venta",
-    ANTICRETICO: "Anticrético",
-    anticretico: "Anticrético",
-  };
-  return labels[operationType] || operationType;
+export const getOperationTypeLabel = (
+  operationType: string | { id?: string; name?: string } | null | undefined
+): string => {
+  // Si es un objeto, usar el nombre directamente
+  if (
+    operationType &&
+    typeof operationType === "object" &&
+    "name" in operationType
+  ) {
+    return operationType.name || "";
+  }
+
+  // Si es un string, usar el mapeo
+  if (typeof operationType === "string") {
+    const labels: { [key: string]: string } = {
+      rent: "Alquiler",
+      sale: "Venta",
+      both: "Anticrético",
+      RENT: "Alquiler",
+      SALE: "Venta",
+      ANTICRETICO: "Anticrético",
+      anticretico: "Anticrético",
+    };
+    return labels[operationType] || operationType;
+  }
+
+  return "";
 };
 
 export const getOperationTypeSuffix = (operationType: string): string => {
@@ -47,7 +63,7 @@ export const isPropertyAvailable = (status: string): boolean => {
 };
 
 export const getStatusColorClasses = (
-  status: string,
+  status: string
 ): {
   containerClass: string;
   textClass: string;

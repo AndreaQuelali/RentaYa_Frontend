@@ -41,7 +41,6 @@ export default function HomeScreen() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<FilterValues>({});
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [mapReady, setMapReady] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -57,7 +56,6 @@ export default function HomeScreen() {
 
       const data = res.data?.data?.items || res.data?.items || [];
       setItems(data);
-      // Fetch favorites in parallel
       try {
         const favRes = await api.get("/api/properties/user/favorites");
         const favs = favRes.data?.data || [];
@@ -65,9 +63,8 @@ export default function HomeScreen() {
           favs.map((f: any) => (f.propertyId ? f.propertyId : f.property?.id)).filter(Boolean),
         );
         setFavorites(ids);
-      } catch (favErr) {
+      } catch {
         // Not critical if user is not authenticated
-        // console.log('Favorites fetch skipped:', favErr);
       }
     } catch (e: any) {
       console.error("Error fetching properties:", e);
@@ -146,10 +143,8 @@ export default function HomeScreen() {
   const getOperationTypeLabel = (operationType: string) => {
     const labels: { [key: string]: string } = {
       RENT: "Alquiler",
-      SALE: "Venta",
       ANTICRETICO: "Anticrético",
       rent: "Alquiler",
-      sale: "Venta",
       anticretico: "Anticrético",
     };
     return labels[operationType] || operationType;
@@ -184,7 +179,6 @@ export default function HomeScreen() {
             <MapView
               provider={PROVIDER_GOOGLE}
               style={{ height: 260, width: "100%" }}
-              onMapReady={() => setMapReady(true)}
               initialRegion={(function () {
                 const withCoords = items.filter(
                   (p) => typeof (p as any).latitude === 'number' && typeof (p as any).longitude === 'number'
@@ -274,17 +268,13 @@ export default function HomeScreen() {
                       ? property.propertyPhotos[0].url
                       : undefined;
 
-                  const priceText = property.price
-                    ? `Bs ${property.price.toLocaleString("es-BO")}`
-                    : "Precio no disponible";
-
                   return (
                     <PropertyCard
                       key={property.id}
                       propertyId={property.id}
                       title={property.title}
                       imageUrl={firstPhoto}
-                      price={priceText}
+                      price={Number(property.price) || 0}
                       tipo={getOperationTypeLabel(property.operationType)}
                       ubicacion={property.city || property.address}
                       address={property.address}
