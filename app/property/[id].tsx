@@ -20,8 +20,12 @@ import {
 } from "@/utils/contactHelpers";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/auth/use-auth";
-import ShowInterestModal from "@/components/ShowInterestModal";
-import { useMyInterests } from "@/hooks/interests/useInterests";
+import {
+  useMyInterests,
+  useCreateInterest,
+} from "@/hooks/interests/useInterests";
+import CreateReportModal from "@/components/CreateReportModal";
+import { Alert, TextInput } from "react-native";
 
 const { width } = Dimensions.get("window");
 const galleryHeight = 220;
@@ -35,7 +39,13 @@ export default function PropertyDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [avgRating, setAvgRating] = useState<number>(0);
-  const [showInterestModal, setShowInterestModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [createdInterestId, setCreatedInterestId] = useState<string | null>(
+    null
+  );
+  const [solicitudMessage, setSolicitudMessage] = useState("");
+  const [isSubmittingSolicitud, setIsSubmittingSolicitud] = useState(false);
+  const { mutate: createInterest } = useCreateInterest();
 
   const existingInterest = useMemo(() => {
     if (!myInterests || !id) return null;
@@ -62,7 +72,7 @@ export default function PropertyDetailScreen() {
         const favRes = await api.get("/api/properties/user/favorites");
         const favs = favRes.data?.data || [];
         const found = favs.some(
-          (f: any) => (f.propertyId ? f.propertyId : f.property?.id) === id,
+          (f: any) => (f.propertyId ? f.propertyId : f.property?.id) === id
         );
         setIsFavorite(found);
       } catch {
@@ -84,8 +94,8 @@ export default function PropertyDetailScreen() {
           count > 0
             ? Number(
                 (list.reduce((s, r) => s + (r.rating || 0), 0) / count).toFixed(
-                  1,
-                ),
+                  1
+                )
               )
             : 0;
         setAvgRating(avg);
@@ -103,6 +113,55 @@ export default function PropertyDetailScreen() {
     } catch (e) {
       console.error("Error toggling favorite: ", e);
     }
+  };
+
+  const handleSolicitar = () => {
+    if (isSubmittingSolicitud || !id) return;
+
+    setIsSubmittingSolicitud(true);
+
+    createInterest(
+      {
+        propertyId: id,
+        message: solicitudMessage.trim() || undefined,
+      },
+      {
+        onSuccess: (interest: any) => {
+          const interestId = interest?.id || interest?.data?.id;
+
+          if (!interestId) {
+            setIsSubmittingSolicitud(false);
+            Alert.alert("Error", "No se pudo obtener el ID del interés creado");
+            return;
+          }
+
+          setIsSubmittingSolicitud(false);
+          setCreatedInterestId(interestId);
+          setSolicitudMessage("");
+          setShowReportModal(true);
+        },
+        onError: (error: any) => {
+          setIsSubmittingSolicitud(false);
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Error al crear el interés. Por favor, intenta de nuevo.";
+          Alert.alert("Error", errorMessage);
+        },
+      }
+    );
+  };
+
+  const handleReportModalClose = () => {
+    setShowReportModal(false);
+    setCreatedInterestId(null);
+  };
+
+  const handleReportSuccess = () => {
+    setShowReportModal(false);
+    setCreatedInterestId(null);
+    // Refrescar los intereses para que aparezca el estado
+    // Esto se hará automáticamente con el query invalidation del hook
   };
 
   if (loading) {
@@ -264,14 +323,38 @@ export default function PropertyDetailScreen() {
 
           {isRentante && !isOwner && !existingInterest && (
             <View className="mb-6">
+              <View className="bg-gray-50 rounded-xl p-4 mb-4">
+                <Text className="text-lg font-bold mb-3">Solicitud</Text>
+                <TextInput
+                  className="border border-gray-300 rounded-xl px-4 py-3 text-base min-h-[100px] bg-white"
+                  placeholder="Mensaje (opcional)"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={4}
+                  value={solicitudMessage}
+                  onChangeText={setSolicitudMessage}
+                  maxLength={500}
+                  editable={!isSubmittingSolicitud}
+                />
+                <Text className="text-xs text-gray-500 mt-1 text-right">
+                  {solicitudMessage.length}/500
+                </Text>
+              </View>
               <Pressable
                 className="bg-primary rounded-xl py-4 flex-row items-center justify-center"
-                onPress={() => setShowInterestModal(true)}
+                onPress={handleSolicitar}
+                disabled={isSubmittingSolicitud}
               >
-                <Ionicons name="heart" size={20} color="white" />
-                <Text className="text-white font-semibold ml-2">
-                  Mostrar Interés
-                </Text>
+                {isSubmittingSolicitud ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={20} color="white" />
+                    <Text className="text-white font-semibold ml-2">
+                      Solicitar
+                    </Text>
+                  </>
+                )}
               </Pressable>
             </View>
           )}
@@ -358,16 +441,40 @@ export default function PropertyDetailScreen() {
               )}
             </View>
           )}
-          {isArrendador && !isOwner && (
+          {isArrendador && !isOwner && !existingInterest && (
             <View className="mb-6">
+              <View className="bg-gray-50 rounded-xl p-4 mb-4">
+                <Text className="text-lg font-bold mb-3">Solicitud</Text>
+                <TextInput
+                  className="border border-gray-300 rounded-xl px-4 py-3 text-base min-h-[100px] bg-white"
+                  placeholder="Mensaje (opcional)"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={4}
+                  value={solicitudMessage}
+                  onChangeText={setSolicitudMessage}
+                  maxLength={500}
+                  editable={!isSubmittingSolicitud}
+                />
+                <Text className="text-xs text-gray-500 mt-1 text-right">
+                  {solicitudMessage.length}/500
+                </Text>
+              </View>
               <Pressable
                 className="bg-primary rounded-xl py-4 flex-row items-center justify-center"
-                onPress={() => setShowInterestModal(true)}
+                onPress={handleSolicitar}
+                disabled={isSubmittingSolicitud}
               >
-                <Ionicons name="heart" size={20} color="white" />
-                <Text className="text-white font-semibold ml-2">
-                  Mostrar Interés
-                </Text>
+                {isSubmittingSolicitud ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={20} color="white" />
+                    <Text className="text-white font-semibold ml-2">
+                      Solicitar
+                    </Text>
+                  </>
+                )}
               </Pressable>
             </View>
           )}
@@ -455,12 +562,14 @@ export default function PropertyDetailScreen() {
         </View>
       </ScrollView>
 
-      {id && (
-        <ShowInterestModal
-          visible={showInterestModal}
-          onClose={() => setShowInterestModal(false)}
+      {id && createdInterestId && (
+        <CreateReportModal
+          visible={showReportModal}
+          onClose={handleReportModalClose}
           propertyId={id}
           propertyTitle={property?.title || ""}
+          interestId={createdInterestId}
+          onSuccess={handleReportSuccess}
         />
       )}
     </View>
