@@ -49,22 +49,25 @@ export function useCreateInterest() {
 
   return useMutation({
     mutationFn: async (payload: CreateInterestPayload) => {
-      const response = await api.post("/api/interests", payload);
-      return response.data;
+      const interestResponse = await api.post("/api/interests", {
+        propertyId: payload.propertyId,
+        message: payload.message,
+      });
+
+      const interest = interestResponse.data?.data || interestResponse.data;
+      return interest;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["interests", "my-interests"],
       });
       queryClient.invalidateQueries({ queryKey: ["interests", "owner"] });
-      Alert.alert(
-        "Éxito",
-        "Tu interés ha sido enviado al propietario. Te notificaremos cuando responda.",
-      );
     },
     onError: (error: any) => {
       const message =
-        error.response?.data?.message || "Error al mostrar interés";
+        error?.response?.data?.message ||
+        error?.message ||
+        "Error al mostrar interés";
       Alert.alert("Error", message);
     },
   });
@@ -85,7 +88,7 @@ export function useOwnerInterests() {
     queryKey: ["interests", "owner"],
     queryFn: async () => {
       const response = await api.get(
-        "/api/interests/owner/my-properties-interests",
+        "/api/interests/owner/my-properties-interests"
       );
       return (response.data?.data || response.data || []) as Interest[];
     },
@@ -103,10 +106,17 @@ export function useUpdateInterestStatus() {
       interestId: string;
       payload: UpdateInterestStatusPayload;
     }) => {
+      // Paso 1: Actualizar el status del interés
       const response = await api.patch(
         `/api/interests/${interestId}/status`,
-        payload,
+        payload
       );
+
+      // Paso 2: Si el interés fue aceptado, también aceptar el reporte
+      if (payload.status === "aceptado") {
+        await api.patch(`/api/reports/${interestId}/accept`);
+      }
+
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -114,6 +124,7 @@ export function useUpdateInterestStatus() {
         queryKey: ["interests", "my-interests"],
       });
       queryClient.invalidateQueries({ queryKey: ["interests", "owner"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
 
       const statusText =
         variables.payload.status === "aceptado" ? "aceptado" : "rechazado";
@@ -121,7 +132,9 @@ export function useUpdateInterestStatus() {
     },
     onError: (error: any) => {
       const message =
-        error.response?.data?.message || "Error al actualizar el interés";
+        error?.response?.data?.message ||
+        error?.message ||
+        "Error al actualizar el interés. Por favor, intenta de nuevo.";
       Alert.alert("Error", message);
     },
   });
