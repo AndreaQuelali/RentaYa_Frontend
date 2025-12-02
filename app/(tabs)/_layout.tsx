@@ -105,7 +105,7 @@ export default function TabLayout() {
         options={{
           title: "Reportes",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" size={size ?? 24} color={color} />
+            <Ionicons name="newspaper-outline" size={size ?? 24} color={color} />
           ),
           href: !isArrendador ? null : undefined,
         }}
@@ -123,9 +123,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="interests"
         options={{
-          title: "Mis Intereses",
+          title: "Mis solicitudes",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart-outline" size={size ?? 24} color={color} />
+            <Ionicons name="file-tray-full-outline" size={size ?? 24} color={color} />
           ),
           href: isArrendador ? null : undefined,
         }}
@@ -133,9 +133,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="property-interests"
         options={{
-          title: "Intereses",
+          title: "Solicitudes",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size ?? 24} color={color} />
+            <Ionicons name="file-tray-full-outline" size={size ?? 24} color={color} />
           ),
           href: !isArrendador ? null : undefined,
         }}

@@ -238,7 +238,7 @@ export default function NewPropertyForm({
             <PhotoUrlPicker
               value={formData.photos}
               onChange={(photos) => updateField("photos", photos)}
-              title="Fotos (URLs)"
+              title="Fotos"
             />
           </View>
         </View>
