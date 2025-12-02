@@ -111,16 +111,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="rentals"
-        options={{
-          title: "Mis alquileres",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size ?? 24} color={color} />
-          ),
-          href: isArrendador ? null : undefined,
-        }}
-      />
-      <Tabs.Screen
         name="interests"
         options={{
           title: "Mis solicitudes",
