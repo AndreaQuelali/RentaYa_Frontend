@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -19,10 +20,14 @@ import {
   handleEmail,
   handleWhatsApp,
 } from "@/utils/contactHelpers";
+import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/auth/use-auth";
+import RatingModal from "@/components/RatingModal";
 
 type FilterType = "all" | InterestStatus;
 
 export default function MyInterestsScreen() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState<FilterType>("all");
   const {
     data: interests,
@@ -31,11 +36,53 @@ export default function MyInterestsScreen() {
     isRefetching,
   } = useMyInterests();
 
+  const [showRating, setShowRating] = useState(false);
+  const [selected, setSelected] = useState<{
+    propertyId: string;
+    title: string;
+  } | null>(null);
+  const [ratedPropertyIds, setRatedPropertyIds] = useState<string[]>([]);
+
   const filteredInterests = useMemo(() => {
     if (!interests) return [];
     if (filter === "all") return interests;
     return interests.filter((interest) => interest.status === filter);
   }, [interests, filter]);
+
+  const openRate = (propertyId: string, title: string) => {
+    setSelected({ propertyId, title });
+    setShowRating(true);
+  };
+
+  const handleRatingSubmit = async (rating: number, comment: string) => {
+    if (!user?.id || !selected) return;
+
+    try {
+      await api.post("/api/reviews", {
+        userId: user.id,
+        propertyId: selected.propertyId,
+        rating,
+        content: comment || "",
+      });
+
+      setRatedPropertyIds((prev) =>
+        prev.includes(selected.propertyId)
+          ? prev
+          : [...prev, selected.propertyId],
+      );
+
+      Alert.alert("Éxito", "Tu calificación fue enviada correctamente.");
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.message ||
+        "No se pudo enviar la calificación";
+      Alert.alert("Error", msg);
+    } finally {
+      setShowRating(false);
+      setSelected(null);
+    }
+  };
 
   const getStatusBadge = (status: InterestStatus) => {
     const config = {
@@ -102,11 +149,13 @@ export default function MyInterestsScreen() {
   return (
     <View className="flex-1 bg-white">
       <View className="bg-primary pt-12 pb-3 px-4">
-        <View className="flex-row items-center gap-2 mb-3">
+        <View className="flex-row items-center gap-2">
           <Logo size={20} />
           <Text className="text-white font-semibold text-lg">RentaYa</Text>
         </View>
-        <Text className="text-white text-2xl font-bold">Mis Intereses</Text>
+      </View>
+      <View className="p-4">
+        <Text className="text-2xl font-bold text-gray-900 mb-2">Mis solicitudes</Text>
       </View>
 
       <View className="flex-row px-4 py-3 gap-2 border-b border-gray-200">
@@ -184,11 +233,11 @@ export default function MyInterestsScreen() {
       >
         {filteredInterests.length === 0 ? (
           <View className="flex-1 items-center justify-center px-8 py-16">
-            <Ionicons name="heart-outline" size={64} color="#D1D5DB" />
+            <Ionicons name="file-tray-outline" size={64} color="#D1D5DB" />
             <Text className="text-gray-400 text-lg font-semibold mt-4 text-center">
               {filter === "all"
                 ? "No has mostrado interés en ninguna propiedad"
-                : `No tienes intereses ${filter === "pendiente" ? "pendientes" : filter === "aceptado" ? "aceptados" : "rechazados"}`}
+                : `No tienes solicitudes ${filter === "pendiente" ? "pendientes" : filter === "aceptado" ? "aceptados" : "rechazados"}`}
             </Text>
             <Text className="text-gray-400 text-sm mt-2 text-center">
               {filter === "all" &&
@@ -244,10 +293,6 @@ export default function MyInterestsScreen() {
                         numberOfLines={1}
                       >
                         {interest.property?.city || ""}
-                        {interest.property?.city &&
-                          interest.property?.address &&
-                          ", "}
-                        {interest.property?.address || ""}
                       </Text>
                     </View>
 
@@ -268,55 +313,85 @@ export default function MyInterestsScreen() {
                       </Text>
                     </View>
 
-                    {interest.status === "aceptado" &&
-                      interest.property?.owner && (
-                        <View className="mt-4 pt-4 border-t border-gray-200">
-                          <Text className="text-sm font-semibold text-gray-700 mb-2">
-                            Contactar propietario:
+                    {interest.status === "aceptado" && (
+                      <View className="mt-4 pt-4 border-t border-gray-200 gap-3">
+                        {interest.property?.owner && (
+                          <>
+                            <Text className="text-sm font-semibold text-gray-700 mb-2">
+                              Contactar propietario:
+                            </Text>
+                            <View className="flex-row gap-2">
+                              <Pressable
+                                className="flex-1 bg-primary rounded-xl py-2 flex-row items-center justify-center"
+                                onPress={() =>
+                                  handleCall(interest.property.owner.phone || "")
+                                }
+                              >
+                                <Ionicons name="call" size={16} color="white" />
+                                <Text className="text-white font-semibold ml-1 text-xs">
+                                  Llamar
+                                </Text>
+                              </Pressable>
+                              <Pressable
+                                className="flex-1 bg-green-500 rounded-xl py-2 flex-row items-center justify-center"
+                                onPress={() =>
+                                  handleWhatsApp(
+                                    interest.property.owner.phone || "",
+                                  )
+                                }
+                              >
+                                <Ionicons
+                                  name="logo-whatsapp"
+                                  size={16}
+                                  color="white"
+                                />
+                                <Text className="text-white font-semibold ml-1 text-xs">
+                                  WhatsApp
+                                </Text>
+                              </Pressable>
+                              <Pressable
+                                className="flex-1 bg-blue-500 rounded-xl py-2 flex-row items-center justify-center"
+                                onPress={() =>
+                                  handleEmail(interest.property.owner.email || "")
+                                }
+                              >
+                                <Ionicons name="mail" size={16} color="white" />
+                                <Text className="text-white font-semibold ml-1 text-xs">
+                                  Email
+                                </Text>
+                              </Pressable>
+                            </View>
+                          </>
+                        )}
+
+                        <Pressable
+                          className={`mt-1 rounded-xl py-3 items-center justify-center ${
+                            ratedPropertyIds.includes(interest.propertyId)
+                              ? "bg-gray-200"
+                              : "bg-black"
+                          }`}
+                          disabled={ratedPropertyIds.includes(interest.propertyId)}
+                          onPress={() =>
+                            openRate(
+                              interest.propertyId,
+                              interest.property?.title || "Propiedad",
+                            )
+                          }
+                        >
+                          <Text
+                            className={`font-semibold ${
+                              ratedPropertyIds.includes(interest.propertyId)
+                                ? "text-gray-500"
+                                : "text-white"
+                            }`}
+                          >
+                            {ratedPropertyIds.includes(interest.propertyId)
+                              ? "Calificada"
+                              : "Calificar"}
                           </Text>
-                          <View className="flex-row gap-2">
-                            <Pressable
-                              className="flex-1 bg-primary rounded-xl py-2 flex-row items-center justify-center"
-                              onPress={() =>
-                                handleCall(interest.property.owner.phone || "")
-                              }
-                            >
-                              <Ionicons name="call" size={16} color="white" />
-                              <Text className="text-white font-semibold ml-1 text-xs">
-                                Llamar
-                              </Text>
-                            </Pressable>
-                            <Pressable
-                              className="flex-1 bg-green-500 rounded-xl py-2 flex-row items-center justify-center"
-                              onPress={() =>
-                                handleWhatsApp(
-                                  interest.property.owner.phone || "",
-                                )
-                              }
-                            >
-                              <Ionicons
-                                name="logo-whatsapp"
-                                size={16}
-                                color="white"
-                              />
-                              <Text className="text-white font-semibold ml-1 text-xs">
-                                WhatsApp
-                              </Text>
-                            </Pressable>
-                            <Pressable
-                              className="flex-1 bg-blue-500 rounded-xl py-2 flex-row items-center justify-center"
-                              onPress={() =>
-                                handleEmail(interest.property.owner.email || "")
-                              }
-                            >
-                              <Ionicons name="mail" size={16} color="white" />
-                              <Text className="text-white font-semibold ml-1 text-xs">
-                                Email
-                              </Text>
-                            </Pressable>
-                          </View>
-                        </View>
-                      )}
+                        </Pressable>
+                      </View>
+                    )}
                   </View>
                 </Pressable>
               );
@@ -324,6 +399,12 @@ export default function MyInterestsScreen() {
           </View>
         )}
       </ScrollView>
+      <RatingModal
+        visible={showRating}
+        onClose={() => setShowRating(false)}
+        propertyTitle={selected?.title || ""}
+        onSubmit={handleRatingSubmit}
+      />
     </View>
   );
 }

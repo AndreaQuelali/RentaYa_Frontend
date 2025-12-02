@@ -145,7 +145,7 @@ export default function PropertyDetailScreen() {
           const errorMessage =
             error?.response?.data?.message ||
             error?.message ||
-            "Error al crear el interés. Por favor, intenta de nuevo.";
+            "Error al crear la solicitud. Por favor, intenta de nuevo.";
           Alert.alert("Error", errorMessage);
         },
       }
@@ -193,7 +193,7 @@ export default function PropertyDetailScreen() {
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center justify-between">
         <Pressable
           onPress={() => router.back()}
-          className="p-1 rounded-full bg-white/10"
+          
         >
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
@@ -259,7 +259,7 @@ export default function PropertyDetailScreen() {
                     className="text-base text-gray-600 ml-1"
                     numberOfLines={1}
                   >
-                    {property.city || "—"}, {property.address || "—"}
+                    {property.city || "—"}
                   </Text>
                 </View>
                 <View className="flex-row items-center">
@@ -398,10 +398,10 @@ export default function PropertyDetailScreen() {
                     }`}
                   >
                     {existingInterest.status === "aceptado"
-                      ? "Interés Aceptado"
+                      ? "Solicitud Aceptada"
                       : existingInterest.status === "rechazado"
-                        ? "Interés Rechazado"
-                        : "Interés Pendiente"}
+                        ? "Solicitud Rechazada"
+                        : "Solicitud Pendiente"}
                   </Text>
                 </View>
               </View>
@@ -446,7 +446,7 @@ export default function PropertyDetailScreen() {
               <View className="bg-gray-50 rounded-xl p-4 mb-4">
                 <Text className="text-lg font-bold mb-3">Solicitud</Text>
                 <TextInput
-                  className="border border-gray-300 rounded-xl px-4 py-3 text-base min-h-[100px] bg-white"
+                  className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
                   placeholder="Mensaje (opcional)"
                   placeholderTextColor="#9CA3AF"
                   multiline
@@ -487,7 +487,7 @@ export default function PropertyDetailScreen() {
               >
                 <Ionicons name="heart" size={20} color="white" />
                 <Text className="text-white font-semibold ml-2">
-                  Mostrar Interés
+                  Solicitar
                 </Text>
               </Pressable>
             </View>

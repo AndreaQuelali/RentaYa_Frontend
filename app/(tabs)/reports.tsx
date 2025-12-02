@@ -173,7 +173,7 @@ function SummaryCards({
     return (
       <View className="mb-6">
         <Text className="text-gray-500 text-center py-8">
-          Cargando estadísticas...
+          Cargando resumen...
         </Text>
       </View>
     );
@@ -328,7 +328,7 @@ function ReportsTable({
               className="bg-primary px-4 py-2 rounded-lg flex-row items-center gap-2"
             >
               <Ionicons name="download-outline" size={16} color="white" />
-              <Text className="text-white font-medium text-sm">Exportar</Text>
+              <Text className="text-white font-medium text-md">Exportar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -754,15 +754,12 @@ export default function ReportsScreen() {
 
       <View className="p-4">
         <Text className="text-2xl font-bold text-gray-900 mb-2">Reportes</Text>
-        <Text className="text-gray-600 mb-6">
-          Métricas y reportes de tus propiedades
-        </Text>
 
         <SummaryCards stats={stats} isLoading={statsLoading} />
 
         {/* Filtros */}
         <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-          <Text className="text-sm font-semibold text-gray-700 mb-3">
+          <Text className="text-md font-semibold text-gray-700 mb-3">
             Filtrar por:
           </Text>
           <View className="flex-row flex-wrap gap-2">

@@ -8,8 +8,11 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { PROVINCIAS } from "@/constants/provinces";
-import { PROPERTY_TYPES, OPERATION_MODES } from "@/constants/propertyOptions";
+import {
+  useProvinces,
+  usePropertyTypes,
+  useOperationTypes,
+} from "@/hooks/property/use-catalogs";
 
 interface FilterModalProps {
   visible: boolean;
@@ -32,6 +35,15 @@ export default function FilterModal({
   onApplyFilters,
   initialFilters,
 }: FilterModalProps) {
+  const { data: provincesData } = useProvinces();
+  const { data: propertyTypesData } = usePropertyTypes();
+  const { data: operationTypesData } = useOperationTypes();
+
+  const provinciasOptions = provincesData?.map((item) => item.name) ?? [];
+  const propertyTypesOptions = propertyTypesData?.map((item) => item.name) ?? [];
+  const operationTypesOptions =
+    operationTypesData?.map((item) => item.name) ?? [];
+
   const [provincia, setProvincia] = useState(initialFilters?.provincia || "");
   const [tipoPropiedad, setTipoPropiedad] = useState(
     initialFilters?.tipoPropiedad || ""
@@ -143,7 +155,7 @@ export default function FilterModal({
             {renderPicker(
               "Provincia",
               provincia,
-              PROVINCIAS,
+              provinciasOptions,
               setProvincia,
               showProvinciaPicker,
               () => setShowProvinciaPicker(!showProvinciaPicker)
@@ -152,7 +164,7 @@ export default function FilterModal({
             {renderPicker(
               "Tipo de propiedad",
               tipoPropiedad,
-              PROPERTY_TYPES,
+              propertyTypesOptions,
               setTipoPropiedad,
               showTipoPicker,
               () => setShowTipoPicker(!showTipoPicker)
@@ -187,7 +199,7 @@ export default function FilterModal({
             {renderPicker(
               "Modalidad",
               modalidad,
-              OPERATION_MODES,
+              operationTypesOptions,
               setModalidad,
               showModalidadPicker,
               () => setShowModalidadPicker(!showModalidadPicker)
