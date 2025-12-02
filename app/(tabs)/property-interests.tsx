@@ -40,8 +40,8 @@ export default function PropertyInterestsScreen() {
 
   const handleAccept = (interestId: string) => {
     Alert.alert(
-      "Aceptar interés",
-      "¿Estás seguro de que deseas aceptar este interés? El usuario podrá contactarte.",
+      "Aceptar solicitud",
+      "¿Estás seguro de que deseas aceptar esta solicitud? El usuario podrá contactarte.",
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -59,8 +59,8 @@ export default function PropertyInterestsScreen() {
 
   const handleReject = (interestId: string) => {
     Alert.alert(
-      "Rechazar interés",
-      "¿Estás seguro de que deseas rechazar este interés?",
+      "Rechazar solicitud",
+      "¿Estás seguro de que deseas rechazar esta solicitud?",
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -141,13 +141,13 @@ export default function PropertyInterestsScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="bg-primary pt-12 pb-3 px-4">
-        <View className="flex-row items-center gap-2 mb-3">
-          <Logo size={20} />
-          <Text className="text-white font-semibold text-lg">RentaYa</Text>
-        </View>
-        <Text className="text-white text-2xl font-bold">
-          Intereses en Mis Propiedades
+      <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
+        <Logo size={20} />
+        <Text className="text-white font-semibold text-lg">RentaYa</Text>
+      </View>
+      <View className="p-4"> 
+        <Text className="text-2xl font-bold text-gray-900 mb-2">
+          Solicitudes
         </Text>
       </View>
 
@@ -226,11 +226,11 @@ export default function PropertyInterestsScreen() {
       >
         {filteredInterests.length === 0 ? (
           <View className="flex-1 items-center justify-center px-8 py-16">
-            <Ionicons name="heart-outline" size={64} color="#D1D5DB" />
+            <Ionicons name="file-tray-outline" size={64} color="#D1D5DB" />
             <Text className="text-gray-400 text-lg font-semibold mt-4 text-center">
               {filter === "all"
-                ? "No has recibido intereses en tus propiedades"
-                : `No tienes intereses ${filter === "pendiente" ? "pendientes" : filter === "aceptado" ? "aceptados" : "rechazados"}`}
+                ? "No has recibido solicitudes para tus propiedades"
+                : `No tienes solicitudes ${filter === "pendiente" ? "pendientes" : filter === "aceptado" ? "aceptadas" : "rechazadas"}`}
             </Text>
             <Text className="text-gray-400 text-sm mt-2 text-center">
               {filter === "all" &&

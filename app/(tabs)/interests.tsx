@@ -102,11 +102,13 @@ export default function MyInterestsScreen() {
   return (
     <View className="flex-1 bg-white">
       <View className="bg-primary pt-12 pb-3 px-4">
-        <View className="flex-row items-center gap-2 mb-3">
+        <View className="flex-row items-center gap-2">
           <Logo size={20} />
           <Text className="text-white font-semibold text-lg">RentaYa</Text>
         </View>
-        <Text className="text-white text-2xl font-bold">Mis Intereses</Text>
+      </View>
+      <View className="p-4">
+        <Text className="text-2xl font-bold text-gray-900 mb-2">Mis solicitudes</Text>
       </View>
 
       <View className="flex-row px-4 py-3 gap-2 border-b border-gray-200">
@@ -184,11 +186,11 @@ export default function MyInterestsScreen() {
       >
         {filteredInterests.length === 0 ? (
           <View className="flex-1 items-center justify-center px-8 py-16">
-            <Ionicons name="heart-outline" size={64} color="#D1D5DB" />
+            <Ionicons name="file-tray-outline" size={64} color="#D1D5DB" />
             <Text className="text-gray-400 text-lg font-semibold mt-4 text-center">
               {filter === "all"
                 ? "No has mostrado interés en ninguna propiedad"
-                : `No tienes intereses ${filter === "pendiente" ? "pendientes" : filter === "aceptado" ? "aceptados" : "rechazados"}`}
+                : `No tienes solicitudes ${filter === "pendiente" ? "pendientes" : filter === "aceptado" ? "aceptados" : "rechazados"}`}
             </Text>
             <Text className="text-gray-400 text-sm mt-2 text-center">
               {filter === "all" &&
@@ -244,10 +246,6 @@ export default function MyInterestsScreen() {
                         numberOfLines={1}
                       >
                         {interest.property?.city || ""}
-                        {interest.property?.city &&
-                          interest.property?.address &&
-                          ", "}
-                        {interest.property?.address || ""}
                       </Text>
                     </View>
 
