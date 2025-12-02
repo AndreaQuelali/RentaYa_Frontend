@@ -110,7 +110,7 @@ export default function CreateReportModal({
 
           Alert.alert(
             "Éxito",
-            "Tu solicitud ha sido completada exitosamente. El propietario recibirá una notificación y podrá aceptar o rechazar tu interés. Te notificaremos cuando responda."
+            "Tu solicitud ha sido completada exitosamente. El propietario recibirá una notificación y podrá aceptar o rechazar tu solicitud. Te notificaremos cuando responda."
           );
           setStartDate("");
           setFinishDate("");
@@ -152,7 +152,7 @@ export default function CreateReportModal({
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-1">
               <Text className="text-2xl font-bold text-gray-900">
-                Fechas de Alquiler
+                Solicitud
               </Text>
               <Text className="text-sm text-gray-600 mt-1">
                 {propertyTitle}

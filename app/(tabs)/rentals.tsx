@@ -13,6 +13,7 @@ import RatingModal from "@/components/RatingModal";
 import { router, useFocusEffect } from "expo-router";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/auth/use-auth";
+import Logo from "@/assets/logo";
 
 type RentalItem = {
   propertyId: string;
@@ -269,10 +270,14 @@ export default function RentalsScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="px-4 pt-12 pb-4 bg-white border-b border-gray-200">
-        <Text className="text-2xl font-bold">
-          Mis alquileres y anticréticos
-        </Text>
+      <View className="bg-primary pt-12 pb-3 px-4">
+        <View className="flex-row items-center gap-2">
+          <Logo size={20} />
+          <Text className="text-white font-semibold text-lg">RentaYa</Text>
+        </View>
+      </View>
+      <View className="p-4">
+        <Text className="text-2xl font-bold text-gray-900 mb-2">Mis alquileres y antcréticos</Text>   
         <Text className="text-sm text-gray-600 mt-1">
           {items.length} {items.length === 1 ? "propiedad" : "propiedades"}
         </Text>
