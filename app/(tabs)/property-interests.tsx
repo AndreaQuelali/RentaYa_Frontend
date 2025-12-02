@@ -313,10 +313,6 @@ export default function PropertyInterestsScreen() {
                           numberOfLines={1}
                         >
                           {interest.property?.city || ""}
-                          {interest.property?.city &&
-                            interest.property?.address &&
-                            ", "}
-                          {interest.property?.address || ""}
                         </Text>
                       </View>
                     </Pressable>

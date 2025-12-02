@@ -398,9 +398,9 @@ export default function PropertyDetailScreen() {
                     }`}
                   >
                     {existingInterest.status === "aceptado"
-                      ? "Solicitud Aceptado"
+                      ? "Solicitud Aceptada"
                       : existingInterest.status === "rechazado"
-                        ? "Solicitud Rechazado"
+                        ? "Solicitud Rechazada"
                         : "Solicitud Pendiente"}
                   </Text>
                 </View>
@@ -446,7 +446,7 @@ export default function PropertyDetailScreen() {
               <View className="bg-gray-50 rounded-xl p-4 mb-4">
                 <Text className="text-lg font-bold mb-3">Solicitud</Text>
                 <TextInput
-                  className="border border-gray-300 rounded-xl px-4 py-3 text-base min-h-[100px] bg-white"
+                  className="border border-gray-300 rounded-xl px-4 py-3 text-base bg-white"
                   placeholder="Mensaje (opcional)"
                   placeholderTextColor="#9CA3AF"
                   multiline
