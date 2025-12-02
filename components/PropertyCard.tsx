@@ -121,13 +121,7 @@ export default function PropertyCard({
             className="text-base text-gray-600 ml-1"
           
           >
-            {ubicacion || ""},
-          </Text>
-          <Text
-            className="text-base text-gray-600 ml-1"
-          
-          >
-            {address || ""}
+            {ubicacion || ""}
           </Text>
         </View>
         </View>

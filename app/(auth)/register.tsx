@@ -94,7 +94,7 @@ export default function RegisterScreen() {
                           Rentante
                         </Text>
                         <Text className="text-gray-600 text-sm">
-                          Busco propiedades para alquilar o comprar
+                          Busco propiedades para alquilar
                         </Text>
                       </View>
                       {selectedRole === "rentante" && (
