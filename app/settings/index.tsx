@@ -18,7 +18,7 @@ export default function EditProfileScreen() {
     <View className="flex-1 bg-white">
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center justify-between">
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </Pressable>
         <Text className="text-white font-semibold text-lg">Editar perfil</Text>
         <View style={{ width: 24 }} />
@@ -49,7 +49,7 @@ export default function EditProfileScreen() {
           </View>
 
           <Pressable
-            className="bg-primary rounded-xl py-3 items-center mt-4"
+            className="bg-black rounded-xl py-3 items-center mt-4"
             onPress={onSave}
             disabled={loading}
           >

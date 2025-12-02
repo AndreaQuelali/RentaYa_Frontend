@@ -103,23 +103,22 @@ export default function NotificationsScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="bg-primary pt-12 pb-3 px-4">
-        <View className="flex-row items-center gap-2 mb-3">
-          <Logo size={20} />
-          <Text className="text-white font-semibold text-lg">RentaYa</Text>
-        </View>
-        
-        <View className="flex-row items-center justify-between">
-          <Text className="text-white text-2xl font-bold">Notificaciones</Text>
-          {unreadCount > 0 && (
-            <View className="bg-white px-2 py-1 rounded-full">
+      <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
+        <Logo size={20} />
+        <Text className="text-white font-semibold text-lg">RentaYa</Text>
+      </View>
+
+      <View className="flex-row items-center justify-between px-4 py-3">
+        <Text className="text-2xl font-bold text-gray-900 mb-2">Notificaciones</Text>
+        {unreadCount > 0 && (
+          <View className="bg-white px-2 py-1 rounded-full">
               <Text className="text-primary font-semibold text-sm">
                 {unreadCount} nueva{unreadCount !== 1 ? "s" : ""}
               </Text>
             </View>
           )}
         </View>
-      </View>
+      
 
       {/* Actions */}
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">

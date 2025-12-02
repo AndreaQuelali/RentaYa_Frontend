@@ -127,7 +127,7 @@ export default function ShowInterestModal({
                   setErrors({});
                   Alert.alert(
                     "Éxito",
-                    "Tu interés ha sido enviado al propietario. Te notificaremos cuando responda."
+                    "Tu solicitud ha sido enviada al propietario. Te notificaremos cuando responda."
                   );
                   onClose();
                 },
@@ -149,7 +149,7 @@ export default function ShowInterestModal({
             const errorMessage =
               error?.response?.data?.message ||
               error?.message ||
-              "Error al crear el interés. Por favor, intenta de nuevo.";
+              "Error al crear la solicitud. Por favor, intenta de nuevo.";
             setErrors({
               general: errorMessage,
             });
