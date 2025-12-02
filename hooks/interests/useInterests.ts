@@ -117,6 +117,11 @@ export function useUpdateInterestStatus() {
         await api.patch(`/api/reports/${interestId}/accept`);
       }
 
+      // Paso 3: Si el interés fue rechazado, rechazar también el reporte asociado
+      if (payload.status === "rechazado") {
+        await api.delete(`/api/reports/${interestId}/reject`);
+      }
+
       return response.data;
     },
     onSuccess: (_, variables) => {
