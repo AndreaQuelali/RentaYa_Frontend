@@ -6,6 +6,7 @@ import {
   Pressable,
   TextInput,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -14,6 +15,7 @@ interface RatingModalProps {
   onClose: () => void;
   propertyTitle: string;
   onSubmit: (rating: number, comment: string) => void;
+  isSubmitting?: boolean;
 }
 
 export default function RatingModal({
@@ -21,6 +23,7 @@ export default function RatingModal({
   onClose,
   propertyTitle,
   onSubmit,
+  isSubmitting = false,
 }: RatingModalProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -120,16 +123,22 @@ export default function RatingModal({
 
           <View className="px-4 py-4 border-t border-gray-200 gap-2">
             <Pressable
-              className="bg-black rounded-xl py-4 items-center"
+              className={`rounded-xl py-4 items-center ${isSubmitting ? 'bg-black/70' : 'bg-black'}`}
               onPress={handleSubmit}
+              disabled={isSubmitting}
             >
-              <Text className="text-white font-semibold text-base">
-                Calificar
-              </Text>
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="text-white font-semibold text-base">
+                  Calificar
+                </Text>
+              )}
             </Pressable>
             <Pressable
               className="bg-gray-100 rounded-xl py-4 items-center"
               onPress={handleClose}
+              disabled={isSubmitting}
             >
               <Text className="text-gray-700 font-semibold text-base">
                 Cancelar

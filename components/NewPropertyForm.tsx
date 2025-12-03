@@ -246,19 +246,17 @@ export default function NewPropertyForm({
         <Pressable
           disabled={submitting}
           onPress={submitForm}
-          className={`bg-black rounded-xl py-4 items-center mt-6 ${
-            submitting ? "opacity-50" : "opacity-100"
+          className={`rounded-xl py-4 items-center mt-6 ${
+            submitting ? "bg-black/70" : "bg-black"
           }`}
         >
-          <Text className="text-white font-semibold">
-            {submitting
-              ? propertyToEdit
-                ? "Actualizando..."
-                : "Publicando..."
-              : propertyToEdit
-                ? "Actualizar"
-                : "Publicar"}
-          </Text>
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text className="text-white font-semibold">
+              {propertyToEdit ? "Actualizar" : "Publicar"}
+            </Text>
+          )}
         </Pressable>
       </View>
     </ScrollView>

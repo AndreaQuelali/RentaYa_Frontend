@@ -5,6 +5,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Link } from "expo-router";
 import Logo from "@/assets/logo";
@@ -218,11 +219,15 @@ export default function RegisterScreen() {
                 </View>
 
                 <Pressable
-                  className="bg-black rounded-xl py-4 items-center mt-6"
+                  className={`rounded-xl py-4 items-center mt-6 ${isLoading ? 'bg-black/70' : 'bg-black'}`}
                   onPress={handleSubmit(onSubmit)}
                   disabled={isLoading}
                 >
-                  <Text className="text-white font-semibold">Registrar</Text>
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text className="text-white font-semibold">Registrar</Text>
+                  )}
                 </Pressable>
                 <View className="items-center mt-5">
                   <Text className="text-gray-500 text-sm">

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import RatingModal from "@/components/RatingModal";
 import { router, useFocusEffect } from "expo-router";
@@ -24,10 +24,12 @@ export default function RentalsScreen() {
   const { user } = useAuth();
   const [items, setItems] = React.useState<RentalItem[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const [showRating, setShowRating] = React.useState(false);
   const [selected, setSelected] = React.useState<{ id: string; title: string } | null>(null);
+  const [isSubmittingRating, setIsSubmittingRating] = React.useState(false);
   
   const [tab, setTab] = React.useState<'ACTIVO' | 'FINALIZADO'>('ACTIVO');
 
@@ -36,10 +38,14 @@ export default function RentalsScreen() {
     setShowRating(true);
   };
 
-  const fetchRentals = React.useCallback(async () => {
+  const fetchRentals = React.useCallback(async (isRefreshing = false) => {
     if (!user?.id) return;
     try {
-      setLoading(true);
+      if (isRefreshing) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       // 1) Traer reseñas del usuario para saber cuáles ya calificó
@@ -78,11 +84,13 @@ export default function RentalsScreen() {
           const start = r.startDate ? new Date(r.startDate) : null;
           const finish = r.finishDate ? new Date(r.finishDate) : null;
           let status: string = (r.status || '').toString().toUpperCase();
-          if (!status) {
-            if (start && finish) {
-              if (now >= start && now <= finish) status = 'ACTIVO';
-              else if (finish && now > finish) status = 'FINALIZADO';
-            }
+          
+          // Determinar si puede calificar: fecha finalizada Y status confirmado
+          let canRate = false;
+          if (finish && now > finish) {
+            // La fecha ha terminado
+            // Solo puede calificar si el status es FINALIZADO (confirmado por propietario)
+            canRate = status === 'FINALIZADO';
           }
           if (p) {
             rentals.push({
@@ -92,7 +100,7 @@ export default function RentalsScreen() {
               address: p.address,
               price: p.price,
               photo: p.propertyPhotos?.[0]?.url,
-              canRate: true,
+              canRate: canRate && !ratedSet.has(p.id),
               rated: ratedSet.has(p.id),
               status: status || 'ACTIVO',
               startDate: r.startDate,
@@ -106,7 +114,7 @@ export default function RentalsScreen() {
               address: r.property.address,
               price: r.property.price,
               photo: r.property.propertyPhotos?.[0]?.url,
-              canRate: true,
+              canRate: canRate && !ratedSet.has(pid),
               rated: ratedSet.has(pid),
               status: status || 'ACTIVO',
               startDate: r.startDate,
@@ -142,6 +150,7 @@ export default function RentalsScreen() {
           while (i < propsList.length) {
             const idx = i++;
             const p = propsList[idx];
+            if (!user?.id) continue;
             try {
               const repRes = await api.get(`/api/reports/${user.id}/${p.id}`);
               const reports = repRes.data?.data || [];
@@ -150,12 +159,13 @@ export default function RentalsScreen() {
                 const start = latest.startDate ? new Date(latest.startDate) : null;
                 const finish = latest.finishDate ? new Date(latest.finishDate) : null;
                 let status: string = (latest.status || '').toString().toUpperCase();
-                if (!status) {
-                  if (start && finish) {
-                    if (now >= start && now <= finish) status = 'ACTIVO';
-                    else if (finish && now > finish) status = 'FINALIZADO';
-                  }
+                
+                // Determinar si puede calificar
+                let canRate = false;
+                if (finish && now > finish) {
+                  canRate = status === 'FINALIZADO';
                 }
+                
                 rentals.push({
                   propertyId: p.id,
                   title: p.title,
@@ -163,7 +173,7 @@ export default function RentalsScreen() {
                   address: p.address,
                   price: p.price,
                   photo: p.propertyPhotos?.[0]?.url,
-                  canRate: true,
+                  canRate: canRate && !ratedSet.has(p.id),
                   rated: ratedSet.has(p.id),
                   status: status || 'ACTIVO',
                   startDate: latest.startDate,
@@ -204,8 +214,13 @@ export default function RentalsScreen() {
       setError("No se pudieron cargar tus alquileres");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [user?.id]);
+
+  const onRefresh = () => {
+    fetchRentals(true);
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -216,6 +231,7 @@ export default function RentalsScreen() {
   const handleRatingSubmit = async (rating: number, comment: string) => {
     if (!selected || !user?.id) return;
     try {
+      setIsSubmittingRating(true);
       await api.post("/api/reviews", {
         userId: user.id,
         propertyId: selected.id,
@@ -223,11 +239,12 @@ export default function RentalsScreen() {
         content: comment || "",
       });
       Alert.alert('Éxito', 'Tu calificación fue enviada correctamente.');
-      setItems((prev) => prev.map((it) => (it.propertyId === selected.id ? { ...it, rated: true } : it)));
+      setItems((prev) => prev.map((it) => (it.propertyId === selected.id ? { ...it, rated: true, canRate: false } : it)));
     } catch (e: any) {
       const msg = e.response?.data?.message || "No se pudo enviar la calificación";
       Alert.alert('Error', msg);
     } finally {
+      setIsSubmittingRating(false);
       setShowRating(false);
       setSelected(null);
     }
@@ -251,7 +268,9 @@ export default function RentalsScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1" refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#D65E48"]} />
+      }>
         <View className="px-4 py-4">
           {/* Tabs */}
           <View className="flex-row bg-gray-100 rounded-xl p-1 mb-4">
@@ -338,6 +357,7 @@ export default function RentalsScreen() {
         onClose={() => setShowRating(false)}
         propertyTitle={selected?.title || ""}
         onSubmit={handleRatingSubmit}
+        isSubmitting={isSubmittingRating}
       />
     </View>
   );
