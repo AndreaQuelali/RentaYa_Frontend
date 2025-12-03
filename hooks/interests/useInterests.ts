@@ -117,6 +117,11 @@ export function useUpdateInterestStatus() {
         await api.patch(`/api/reports/${interestId}/accept`);
       }
 
+      // Paso 3: Si el interés fue rechazado, rechazar también el reporte asociado
+      if (payload.status === "rechazado") {
+        await api.delete(`/api/reports/${interestId}/reject`);
+      }
+
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -128,13 +133,13 @@ export function useUpdateInterestStatus() {
 
       const statusText =
         variables.payload.status === "aceptado" ? "aceptado" : "rechazado";
-      Alert.alert("Éxito", `El interés ha sido ${statusText} correctamente.`);
+      Alert.alert("Éxito", `La solicitud ha sido ${statusText} correctamente.`);
     },
     onError: (error: any) => {
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        "Error al actualizar el interés. Por favor, intenta de nuevo.";
+        "Error al actualizar la solicitud. Por favor, intenta de nuevo.";
       Alert.alert("Error", message);
     },
   });

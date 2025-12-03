@@ -110,7 +110,7 @@ export default function CreateReportModal({
 
           Alert.alert(
             "Éxito",
-            "Tu solicitud ha sido completada exitosamente. El propietario recibirá una notificación y podrá aceptar o rechazar tu interés. Te notificaremos cuando responda."
+            "Tu solicitud ha sido completada exitosamente. El propietario recibirá una notificación y podrá aceptar o rechazar tu solicitud. Te notificaremos cuando responda."
           );
           setStartDate("");
           setFinishDate("");

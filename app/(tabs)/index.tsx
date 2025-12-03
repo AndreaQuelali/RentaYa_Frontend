@@ -251,7 +251,7 @@ export default function HomeScreen() {
               <View className="mt-6 items-center justify-center">
                 <Ionicons name="search-outline" size={64} color="#D1D5DB" />
                 <Text className="text-gray-500 mt-4 text-center">
-                  No se encontraron propiedades con `{searchQuery}`
+                  No se encontraron propiedades que coincidan con su búsqueda
                 </Text>
               </View>
             )}

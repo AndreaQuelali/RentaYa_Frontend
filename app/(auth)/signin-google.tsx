@@ -102,7 +102,7 @@ export default function SignInWithGoogleScreen() {
                           Rentante
                         </Text>
                         <Text className="text-gray-600 text-sm">
-                          Busco propiedades para alquilar o comprar
+                          Busco propiedades para alquilar
                         </Text>
                       </View>
                       {selectedRole === 'rentante' && (
