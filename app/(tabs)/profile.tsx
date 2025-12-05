@@ -60,9 +60,10 @@ export default function ProfileScreen() {
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
-      {loading && !profile ? (
+      {loading || !profile ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#D65E48" />
+          <Text className="text-gray-500 mt-2">Cargando perfil...</Text>
         </View>
       ) : (
         <View className="px-4 py-5">

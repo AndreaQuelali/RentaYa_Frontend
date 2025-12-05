@@ -26,7 +26,11 @@ interface Property {
   bathrooms: number;
   areaM2?: number;
   price: number;
-  operationType: string;
+  operationType: string | { id: string; name: string };
+  propertyType?: { id: string; name: string };
+  province?: { id: string; name: string };
+  latitude?: number;
+  longitude?: number;
   propertyPhotos?: {
     id: string;
     url: string;
@@ -103,32 +107,28 @@ export default function HomeScreen() {
 
       // Filtro por provincia
       if (filters.provincia) {
-        filtered = filtered.filter(
-          (property) =>
-            property.city?.toLowerCase() === filters.provincia?.toLowerCase()
-        );
+        filtered = filtered.filter((property) => {
+          const provinceName = property.province?.name || '';
+          return provinceName.toLowerCase() === filters.provincia?.toLowerCase();
+        });
       }
 
       // Filtro por tipo de propiedad
       if (filters.tipoPropiedad) {
-        filtered = filtered.filter((property) =>
-          property.title.includes(filters.tipoPropiedad!)
-        );
+        filtered = filtered.filter((property) => {
+          const propertyTypeName = property.propertyType?.name || '';
+          return propertyTypeName.toLowerCase() === filters.tipoPropiedad?.toLowerCase();
+        });
       }
 
       // Filtro por modalidad
       if (filters.modalidad) {
-        const modalidadMap: { [key: string]: string } = {
-          Alquiler: "RENT",
-          Venta: "SALE",
-          Anticrético: "ANTICRETICO",
-        };
-        const operationType = modalidadMap[filters.modalidad];
-        if (operationType) {
-          filtered = filtered.filter(
-            (property) => property.operationType === operationType
-          );
-        }
+        filtered = filtered.filter((property) => {
+          const operationTypeName = typeof property.operationType === 'object' && property.operationType?.name
+            ? property.operationType.name
+            : property.operationType || '';
+          return operationTypeName.toLowerCase() === filters.modalidad?.toLowerCase();
+        });
       }
 
       // Filtro por rango de precio
@@ -151,14 +151,17 @@ export default function HomeScreen() {
     router.push(`/property/${propertyId}`);
   };
 
-  const getOperationTypeLabel = (operationType: string) => {
+  const getOperationTypeLabel = (operationType: string | { id: string; name: string }) => {
+    if (typeof operationType === 'object' && operationType?.name) {
+      return operationType.name;
+    }
     const labels: { [key: string]: string } = {
       RENT: "Alquiler",
       ANTICRETICO: "Anticrético",
       rent: "Alquiler",
       anticretico: "Anticrético",
     };
-    return labels[operationType] || operationType;
+    return labels[operationType as string] || operationType;
   };
 
   return (
