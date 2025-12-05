@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -35,6 +36,7 @@ export default function PropertiesScreen() {
   const [assignPropertyId, setAssignPropertyId] = useState<string | null>(null);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const {
     properties,
@@ -51,6 +53,12 @@ export default function PropertiesScreen() {
       fetchUserProperties();
     }, [fetchUserProperties])
   );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchUserProperties();
+    setRefreshing(false);
+  };
 
   const handlePropertyPress = (propertyId: string) => {
     router.push(`/property/${propertyId}`);
@@ -258,7 +266,9 @@ export default function PropertiesScreen() {
           onSuccess={handleFormSuccess}
         />
       ) : (
-        <ScrollView className="flex-1">
+        <ScrollView className="flex-1" refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#D65E48"]} />
+        }>
           <View className="p-4">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-xl font-semibold">Mis propiedades</Text>

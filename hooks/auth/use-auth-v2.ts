@@ -41,6 +41,9 @@ export function useAuthV2() {
 
     const initialize = async () => {
       try {
+        // Primero verificar y limpiar storage corrupto
+        await storage.checkAndClearCorruptedStorage();
+
         const isValid = await storage.validateSession();
 
         if (isValid) {
@@ -56,7 +59,11 @@ export function useAuthV2() {
         }
       } catch (error) {
         console.error("Error durante inicialización:", error);
-        await storage.clear();
+        try {
+          await storage.clear();
+        } catch (clearError) {
+          console.error("Error al limpiar storage:", clearError);
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -74,12 +81,20 @@ export function useAuthV2() {
         const isValid = await storage.validateSession();
         if (!isValid) {
           console.warn("Sesión invalidada detectada");
-          await storage.clear();
+          try {
+            await storage.clear();
+          } catch (clearError) {
+            console.error("Error al limpiar storage:", clearError);
+          }
           setUser(null);
         }
       } catch (error) {
         console.error("Error verificando sesión:", error);
-        await storage.clear();
+        try {
+          await storage.clear();
+        } catch (clearError) {
+          console.error("Error al limpiar storage:", clearError);
+        }
         setUser(null);
       }
     };
@@ -105,11 +120,14 @@ export function useAuthV2() {
       setUser(userData);
       queryClient.setQueryData(["auth", "user"], userData);
       try {
-        if (userData?.role === "arrendador") {
-          router.replace("/(tabs)/properties");
-        } else {
-          router.replace("/(tabs)");
-        }
+        // Usar setTimeout para evitar problemas de navegación durante el render
+        setTimeout(() => {
+          if (userData?.role === "arrendador") {
+            router.replace("/(tabs)/properties");
+          } else {
+            router.replace("/(tabs)");
+          }
+        }, 100);
       } catch (err) {
         console.warn("Router replace failed after login:", err);
       }
@@ -117,6 +135,7 @@ export function useAuthV2() {
     onError: (error: any) => {
       console.error("Login error:", error);
       let message = "Error al iniciar sesión";
+
       if (error?.response?.data?.message) {
         message = error.response.data.message;
       } else if (error?.message) {
@@ -124,7 +143,9 @@ export function useAuthV2() {
       } else if (typeof error === "string") {
         message = error;
       }
-      Alert.alert("Error", message + "\n" + JSON.stringify(error));
+
+      // Solo mostrar mensaje limpio, sin JSON
+      Alert.alert("Error de inicio de sesión", message);
     },
   });
 
@@ -151,11 +172,14 @@ export function useAuthV2() {
       setUser(userData);
       queryClient.setQueryData(["auth", "user"], userData);
       try {
-        if (userData?.role === "arrendador") {
-          router.replace("/(tabs)/properties");
-        } else {
-          router.replace("/(tabs)");
-        }
+        // Usar setTimeout para evitar problemas de navegación durante el render
+        setTimeout(() => {
+          if (userData?.role === "arrendador") {
+            router.replace("/(tabs)/properties");
+          } else {
+            router.replace("/(tabs)");
+          }
+        }, 100);
       } catch (err) {
         console.warn("Router replace failed after google login:", err);
       }
@@ -163,6 +187,7 @@ export function useAuthV2() {
     onError: (error: any) => {
       console.error("Google login error:", error);
       let message = "Error al iniciar sesión con Google";
+
       if (error?.response?.data?.message) {
         message = error.response.data.message;
       } else if (error?.message) {
@@ -170,7 +195,9 @@ export function useAuthV2() {
       } else if (typeof error === "string") {
         message = error;
       }
-      Alert.alert("Error", message + "\n" + JSON.stringify(error));
+
+      // Solo mostrar mensaje limpio, sin JSON
+      Alert.alert("Error de inicio de sesión", message);
     },
   });
 

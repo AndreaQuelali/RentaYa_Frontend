@@ -1,4 +1,4 @@
-import { View, Text, KeyboardAvoidingView, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, KeyboardAvoidingView, ScrollView, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import Logo from '@/assets/logo';
 import { useEffect, useState } from 'react';
@@ -179,14 +179,20 @@ export default function SignInWithGoogleScreen() {
                 </View>
 
                 <Pressable 
-                  className={`bg-black rounded-xl py-4 items-center flex-row justify-center gap-2 ${isLoading ? 'opacity-50' : ''}`}
+                  className={`rounded-xl py-4 items-center flex-row justify-center gap-2 ${isLoading ? 'bg-black/70' : 'bg-black'}`}
                   onPress={signIn}
                   disabled={isLoading}
                 >
-                  <Ionicons name="logo-google" size={20} color="#fff" />
-                  <Text className="text-white font-semibold">
-                    {isLoading ? 'Cargando...' : 'Continuar con Google'}
-                  </Text>
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="logo-google" size={20} color="#fff" />
+                      <Text className="text-white font-semibold">
+                        Continuar con Google
+                      </Text>
+                    </>
+                  )}
                 </Pressable>
 
                 <Pressable 

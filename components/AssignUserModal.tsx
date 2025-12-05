@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Modal, View, Text, TextInput, Pressable, TouchableOpacity, ScrollView } from "react-native";
+import { Modal, View, Text, TextInput, Pressable, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import DatePicker from "./DatePicker";
 
 type Props = {
   visible: boolean;
@@ -47,6 +48,10 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
     return emailRegex.test(email);
   };
 
+  const validateDate = (dateStr: string) => {
+    return /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+  };
+
   const handleSubmit = async () => {
     if (!propertyId) return;
     
@@ -64,18 +69,18 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
     
     if (!startDate) {
       newErrors.dates = "La fecha de inicio es requerida";
-    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      newErrors.dates = "Fecha de inicio inválida (YYYY-MM-DD)";
+    } else if (!validateDate(startDate)) {
+      newErrors.dates = "Fecha de inicio inválida";
     }
     
     if (!finishDate) {
       newErrors.dates = newErrors.dates ? newErrors.dates + "; fin requerida" : "La fecha de fin es requerida";
-    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(finishDate)) {
-      newErrors.dates = newErrors.dates ? newErrors.dates + "; fin inválida" : "Fecha de fin inválida (YYYY-MM-DD)";
+    } else if (!validateDate(finishDate)) {
+      newErrors.dates = newErrors.dates ? newErrors.dates + "; fin inválida" : "Fecha de fin inválida";
     }
     
     // Validar que la fecha de fin sea posterior a la de inicio
-    if (startDate && finishDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate) && /^\d{4}-\d{2}-\d{2}$/.test(finishDate)) {
+    if (startDate && finishDate && validateDate(startDate) && validateDate(finishDate)) {
       const start = new Date(startDate);
       const finish = new Date(finishDate);
       if (finish <= start) {
@@ -202,37 +207,25 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
             </View>
 
             <View>
-              <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Inicio *</Text>
-              <TextInput
+              <DatePicker
+                label="Fecha Inicio *"
                 value={startDate}
-                onChangeText={setStartDate}
-                placeholder="2025-12-31"
-                style={{
-                  borderWidth: 1,
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderColor: errors.dates ? '#f87171' : '#d1d5db',
-                }}
+                onChangeDate={setStartDate}
+                error={errors.dates}
+                placeholder="Seleccionar fecha de inicio"
               />
             </View>
             
             <View>
-              <Text className="text-sm text-gray-600 mb-1 font-medium">Fecha Fin *</Text>
-              <TextInput
+              <DatePicker
+                label="Fecha Fin *"
                 value={finishDate}
-                onChangeText={setFinishDate}
-                placeholder="2026-12-31"
-                style={{
-                  borderWidth: 1,
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderColor: errors.dates ? '#f87171' : '#d1d5db',
-                }}
+                onChangeDate={setFinishDate}
+                error={errors.dates}
+                minDate={startDate ? new Date(startDate + 'T00:00:00') : new Date()}
+                placeholder="Seleccionar fecha de fin"
               />
             </View>
-            {errors.dates && <Text className="text-red-600 text-xs mt-1">{errors.dates}</Text>}
 
             <View>
               <Text className="text-sm text-gray-600 mb-1 font-medium">Precio (Bs) *</Text>
@@ -267,7 +260,11 @@ export default function AssignUserModal({ visible, onClose, propertyId, onAssign
               onPress={handleSubmit}
               disabled={submitting || !propertyId}
             >
-              <Text className="text-white font-semibold">{submitting ? 'Asignando...' : 'Asignar'}</Text>
+              {submitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="text-white font-semibold">Asignar</Text>
+              )}
             </Pressable>
           </View>
         </View>

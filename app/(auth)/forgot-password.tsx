@@ -151,17 +151,19 @@ export default function ForgotPasswordScreen() {
 
               <View className="mt-8 space-y-4">
                 <Pressable
-                  className={`bg-black rounded-xl py-4 items-center ${
-                    forgotPassword.isPending ? "opacity-70" : ""
+                  className={`rounded-xl py-4 items-center ${
+                    forgotPassword.isPending ? "bg-black/70" : "bg-black"
                   }`}
                   onPress={emailForm.handleSubmit(onEmailSubmit)}
                   disabled={forgotPassword.isPending}
                 >
-                  <Text className="text-white font-semibold text-base">
-                    {forgotPassword.isPending
-                      ? "Enviando código..."
-                      : "Enviar código"}
-                  </Text>
+                  {forgotPassword.isPending ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text className="text-white font-semibold text-base">
+                      Enviar código
+                    </Text>
+                  )}
                 </Pressable>
 
                 <Pressable onPress={() => router.back()}>
@@ -266,17 +268,19 @@ export default function ForgotPasswordScreen() {
 
             <View className="mt-8 space-y-4">
               <Pressable
-                className={`bg-black rounded-xl py-4 items-center ${
-                  resetPassword.isPending ? "opacity-70" : ""
+                className={`rounded-xl py-4 items-center ${
+                  resetPassword.isPending ? "bg-black/70" : "bg-black"
                 }`}
                 onPress={codeForm.handleSubmit(onResetSubmit)}
                 disabled={resetPassword.isPending}
               >
-                <Text className="text-white font-semibold text-base">
-                  {resetPassword.isPending
-                    ? "Restableciendo..."
-                    : "Restablecer contraseña"}
-                </Text>
+                {resetPassword.isPending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white font-semibold text-base">
+                    Restablecer contraseña
+                  </Text>
+                )}
               </Pressable>
 
               <Pressable

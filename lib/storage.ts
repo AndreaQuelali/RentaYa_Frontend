@@ -3,34 +3,108 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const TOKEN_KEY = "auth_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 const USER_KEY = "user_data";
+const STORAGE_VERSION_KEY = "storage_version";
+const CURRENT_STORAGE_VERSION = "1.0.0";
 
 export const storage = {
+  async checkAndClearCorruptedStorage(): Promise<void> {
+    try {
+      const version = await AsyncStorage.getItem(STORAGE_VERSION_KEY);
+
+      // Si no hay versión o es diferente, limpiar todo
+      if (!version || version !== CURRENT_STORAGE_VERSION) {
+        console.log("Storage version mismatch or missing, clearing all data");
+        await this.clear();
+        await AsyncStorage.setItem(STORAGE_VERSION_KEY, CURRENT_STORAGE_VERSION);
+        return;
+      }
+
+      // Intentar validar los datos existentes
+      try {
+        const token = await this.getToken();
+        const user = await this.getUser();
+
+        // Si hay token pero no user, o viceversa, algo está corrupto
+        if ((token && !user) || (!token && user)) {
+          console.warn("Inconsistent storage detected, clearing");
+          await this.clear();
+          await AsyncStorage.setItem(STORAGE_VERSION_KEY, CURRENT_STORAGE_VERSION);
+        }
+      } catch (validationError) {
+        console.error("Storage validation failed, clearing:", validationError);
+        await this.clear();
+        await AsyncStorage.setItem(STORAGE_VERSION_KEY, CURRENT_STORAGE_VERSION);
+      }
+    } catch (error) {
+      console.error("Error checking storage health:", error);
+      // En caso de error crítico, intentar limpiar todo
+      try {
+        await AsyncStorage.clear();
+      } catch (clearError) {
+        console.error("Critical: Could not clear storage:", clearError);
+      }
+    }
+  },
   async setToken(token: string): Promise<void> {
-    await AsyncStorage.setItem(TOKEN_KEY, token);
+    try {
+      await AsyncStorage.setItem(TOKEN_KEY, token);
+    } catch (error) {
+      console.error("Error setting token:", error);
+      throw error;
+    }
   },
 
   async getToken(): Promise<string | null> {
-    return AsyncStorage.getItem(TOKEN_KEY);
+    try {
+      return await AsyncStorage.getItem(TOKEN_KEY);
+    } catch (error) {
+      console.error("Error getting token:", error);
+      return null;
+    }
   },
 
   async removeToken(): Promise<void> {
-    await AsyncStorage.removeItem(TOKEN_KEY);
+    try {
+      await AsyncStorage.removeItem(TOKEN_KEY);
+    } catch (error) {
+      console.error("Error removing token:", error);
+    }
   },
 
   async setRefreshToken(refreshToken: string): Promise<void> {
-    await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    try {
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    } catch (error) {
+      console.error("Error setting refresh token:", error);
+      throw error;
+    }
   },
 
   async getRefreshToken(): Promise<string | null> {
-    return AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+    try {
+      return await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+    } catch (error) {
+      console.error("Error getting refresh token:", error);
+      return null;
+    }
   },
 
   async removeRefreshToken(): Promise<void> {
-    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+    try {
+      await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+    } catch (error) {
+      console.error("Error removing refresh token:", error);
+    }
   },
 
   async setUser(user: object): Promise<void> {
-    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+    try {
+      const userString = JSON.stringify(user);
+      await AsyncStorage.setItem(USER_KEY, userString);
+    } catch (error) {
+      console.error("Error setting user:", error);
+      throw error;
+    }
   },
 
   async getUser(): Promise<object | null> {
@@ -41,33 +115,47 @@ export const storage = {
       const parsedUser = JSON.parse(user);
 
       if (!parsedUser.id || !parsedUser.email) {
-        console.warn("Corrupted user data detected");
+        console.warn("Corrupted user data detected, removing");
+        await this.removeUser();
         return null;
       }
 
       return parsedUser;
     } catch (error) {
       console.error("Error parsing user data:", error);
+      // Intentar limpiar el usuario corrupto
+      try {
+        await this.removeUser();
+      } catch (removeError) {
+        console.error("Could not remove corrupted user:", removeError);
+      }
       return null;
     }
   },
 
   async removeUser(): Promise<void> {
-    await AsyncStorage.removeItem(USER_KEY);
+    try {
+      await AsyncStorage.removeItem(USER_KEY);
+    } catch (error) {
+      console.error("Error removing user:", error);
+    }
   },
 
   async clear(): Promise<void> {
+    const keysToRemove = [TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY];
+
     try {
-      await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY]);
+      await AsyncStorage.multiRemove(keysToRemove);
       console.log("Storage cleared successfully");
     } catch (error) {
-      console.error("Error clearing storage:", error);
-      try {
-        await AsyncStorage.removeItem(TOKEN_KEY);
-        await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
-        await AsyncStorage.removeItem(USER_KEY);
-      } catch (individualError) {
-        console.error("Error clearing storage individually:", individualError);
+      console.error("Error clearing storage with multiRemove:", error);
+      // Intentar eliminar individualmente
+      for (const key of keysToRemove) {
+        try {
+          await AsyncStorage.removeItem(key);
+        } catch (individualError) {
+          console.error(`Error removing ${key}:`, individualError);
+        }
       }
     }
   },

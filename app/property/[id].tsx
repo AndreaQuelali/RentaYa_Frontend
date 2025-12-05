@@ -7,6 +7,8 @@ import {
   Image,
   Dimensions,
   ActivityIndicator,
+  Alert,
+  TextInput,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,7 +27,7 @@ import {
   useCreateInterest,
 } from "@/hooks/interests/useInterests";
 import CreateReportModal from "@/components/CreateReportModal";
-import { Alert, TextInput } from "react-native";
+
 
 const { width } = Dimensions.get("window");
 const galleryHeight = 220;

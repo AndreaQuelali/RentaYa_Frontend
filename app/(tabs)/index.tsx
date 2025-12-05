@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Logo from "@/assets/logo";
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const [items, setItems] = useState<Property[]>([]);
   const [filteredItems, setFilteredItems] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -48,9 +50,13 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const fetchData = async () => {
+  const fetchData = async (isRefreshing = false) => {
     try {
-      setLoading(true);
+      if (isRefreshing) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       const res = await api.get("/api/properties");
 
@@ -71,7 +77,12 @@ export default function HomeScreen() {
       setError("No se pudieron cargar los inmuebles");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    fetchData(true);
   };
 
   useEffect(() => {
@@ -157,7 +168,9 @@ export default function HomeScreen() {
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1" refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#D65E48"]} />
+      }>
         <View className="px-4 py-4">
           <View className="mb-4">
             <SearchBar

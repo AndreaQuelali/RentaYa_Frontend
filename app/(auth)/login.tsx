@@ -1,4 +1,4 @@
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
 import Logo from '@/assets/logo';
 import { FormField } from '@/components/forms/form';
@@ -75,13 +75,17 @@ export default function LoginScreen() {
 
             <View className="mt-8 space-y-4">
               <Pressable 
-                className={`bg-black rounded-xl py-4 items-center ${isLoading ? 'opacity-70' : ''}`}
+                className={`rounded-xl py-4 items-center ${isLoading ? 'bg-black/70' : 'bg-black'}`}
                 onPress={handleSubmit(onSubmit)}
                 disabled={isLoading}
               >
-                <Text className="text-white font-semibold text-base">
-                  {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-                </Text>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white font-semibold text-base">
+                    Iniciar sesión
+                  </Text>
+                )}
               </Pressable>
             </View>
 

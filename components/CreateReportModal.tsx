@@ -152,7 +152,7 @@ export default function CreateReportModal({
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-1">
               <Text className="text-2xl font-bold text-gray-900">
-                Solicitud
+                Fechas de Alquiler
               </Text>
               <Text className="text-sm text-gray-600 mt-1">
                 {propertyTitle}
