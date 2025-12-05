@@ -13,6 +13,7 @@ export type User = {
   phone?: string;
   role?: string;
   statusVerification?: string;
+  profilePhoto?: string | null;
 };
 
 export type AuthResponse = {
@@ -201,6 +202,14 @@ export function useAuthV2() {
     },
   });
 
+  const updateUser = useCallback(async (updatedData: Partial<User>) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, ...updatedData };
+    setUser(updatedUser);
+    await storage.setUser(updatedUser);
+  }, [user]);
+
   const logout = useCallback(async () => {
     if (logoutInProgressRef.current) return;
     
@@ -240,5 +249,6 @@ export function useAuthV2() {
     googleLogin: googleLoginMutation,
 
     logout,
+    updateUser,
   };
 }

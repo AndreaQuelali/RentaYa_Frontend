@@ -28,21 +28,21 @@ interface UserProfileContextType {
 export const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
 
 export function UserProfileProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.id) {
-      if (!profile || profile.id !== user.id) {
+      if (!profile || profile.id !== user.id || profile.profilePhoto !== user.profilePhoto) {
         const userProfile: UserProfile = {
           id: user.id,
           email: user.email,
           fullName: user.fullName,
           phone: user.phone || '',
-          profilePhoto: (user as any).profilePhoto || null,
-          verificationStatus: (user as any).statusVerification || 'pending',
+          profilePhoto: user.profilePhoto || null,
+          verificationStatus: user.statusVerification || 'pending',
           createdAt: (user as any).createdAt || new Date().toISOString(),
           updatedAt: (user as any).updatedAt || new Date().toISOString(),
         };
@@ -52,7 +52,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     } else if (!user && profile) {
       setProfile(null);
     }
-  }, [user?.id]);
+  }, [user?.id, user?.profilePhoto, user?.fullName, user?.phone, user?.email]);
 
   
   const fetchProfile = async () => {
@@ -82,6 +82,11 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       
       if (user?.id && updatedProfile.id === user.id) {
         setProfile(updatedProfile);
+        await updateUser({
+          fullName: updatedProfile.fullName,
+          phone: updatedProfile.phone,
+          email: updatedProfile.email,
+        });
       }
     } catch (err: any) {
       console.error('[Profile] Error updating profile:', err);
@@ -96,7 +101,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-      formData.append('image', {
+      formData.append('profileImage', {
         uri,
         name: filename,
         type,
@@ -112,6 +117,9 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       
       if (user?.id && updatedProfile.id === user.id) {
         setProfile(updatedProfile);
+        await updateUser({ 
+          profilePhoto: updatedProfile.profilePhoto 
+        } as any);
       }
     } catch (err: any) {
       console.error('[Profile] Error uploading profile image:', err);

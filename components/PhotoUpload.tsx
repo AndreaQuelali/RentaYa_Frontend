@@ -73,7 +73,7 @@ export default function PhotoUrlPicker({
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: false,
       quality: 0.8,
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       selectionLimit: 0,
       allowsMultipleSelection: true,
     });
