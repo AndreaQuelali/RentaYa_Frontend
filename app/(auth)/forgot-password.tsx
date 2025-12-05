@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Ionicons } from "@expo/vector-icons";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Email inválido").min(1, "El email es requerido"),
@@ -106,25 +107,20 @@ export default function ForgotPasswordScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View className="flex-1 justify-center items-center px-6 pt-12 pb-8">
-              <Pressable
-                onPress={() => router.back()}
-                className="absolute top-6 left-6 z-10"
-              >
-                <Text className="text-white text-2xl">←</Text>
-              </Pressable>
-
-              <View className="items-center">
-                <Logo />
-                <Text className="text-4xl font-bold text-white mt-4 tracking-tight">
-                  RentaYa
-                </Text>
-                <Text className="text-white/80 text-base mt-2 text-center">
-                  Recupera acceso a tu cuenta
-                </Text>
-              </View>
+             <View className="flex-1 bg-primary">
+                <Pressable 
+                  onPress={() => router.back()} 
+                  className="absolute top-12 left-5 z-10 p-2"
+                >
+                  <Ionicons name="chevron-back" size={24} color="white" />
+                </Pressable>
+                <View className="items-center justify-center my-auto">
+                  <Logo />
+                  <Text className="text-3xl font-medium tracking-tight text-white mt-3">
+                    RentaYa
+                  </Text>
+                </View>
             </View>
-
             <View className="bg-white rounded-t-3xl px-6 pt-8 pb-12 min-h-[400px]">
               <View className="mb-8">
                 <Text className="text-2xl font-bold text-gray-900 text-center mb-2">
@@ -165,12 +161,6 @@ export default function ForgotPasswordScreen() {
                     </Text>
                   )}
                 </Pressable>
-
-                <Pressable onPress={() => router.back()}>
-                  <Text className="text-gray-600 text-center font-medium">
-                    Volver al login
-                  </Text>
-                </Pressable>
               </View>
             </View>
           </ScrollView>
@@ -200,7 +190,7 @@ export default function ForgotPasswordScreen() {
               }}
               className="absolute top-6 left-6 z-10"
             >
-              <Text className="text-white text-2xl">←</Text>
+              <Ionicons name="chevron-back" size={24} color="white" />
             </Pressable>
 
             <View className="items-center">
