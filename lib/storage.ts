@@ -11,20 +11,16 @@ export const storage = {
     try {
       const version = await AsyncStorage.getItem(STORAGE_VERSION_KEY);
 
-      // Si no hay versión o es diferente, limpiar todo
       if (!version || version !== CURRENT_STORAGE_VERSION) {
-        console.log("Storage version mismatch or missing, clearing all data");
         await this.clear();
         await AsyncStorage.setItem(STORAGE_VERSION_KEY, CURRENT_STORAGE_VERSION);
         return;
       }
 
-      // Intentar validar los datos existentes
       try {
         const token = await this.getToken();
         const user = await this.getUser();
 
-        // Si hay token pero no user, o viceversa, algo está corrupto
         if ((token && !user) || (!token && user)) {
           console.warn("Inconsistent storage detected, clearing");
           await this.clear();
@@ -37,7 +33,6 @@ export const storage = {
       }
     } catch (error) {
       console.error("Error checking storage health:", error);
-      // En caso de error crítico, intentar limpiar todo
       try {
         await AsyncStorage.clear();
       } catch (clearError) {

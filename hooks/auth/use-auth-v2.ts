@@ -1,9 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { api, setLogoutInProgress } from "@/lib/api";
 import { storage } from "@/lib/storage";
 import { Alert } from "react-native";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useContext } from "react";
 import { useRouter } from "expo-router";
+import { UserProfileContext } from "@/context/UserProfileContext";
 
 export type User = {
   id: string;
@@ -28,8 +29,8 @@ export type BackendResponse = {
 };
 
 export function useAuthV2() {
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const profileContext = useContext(UserProfileContext);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const initCheckRef = useRef(false);
@@ -41,7 +42,6 @@ export function useAuthV2() {
 
     const initialize = async () => {
       try {
-        // Primero verificar y limpiar storage corrupto
         await storage.checkAndClearCorruptedStorage();
 
         const isValid = await storage.validateSession();
@@ -105,6 +105,7 @@ export function useAuthV2() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
+      setLogoutInProgress(false);
       const response = await api.post("/api/auth/login", credentials);
       return response.data as BackendResponse;
     },
@@ -117,20 +118,21 @@ export function useAuthV2() {
       }
       await storage.setUser(userData);
 
+      api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+      
       setUser(userData);
-      queryClient.setQueryData(["auth", "user"], userData);
-      try {
-        // Usar setTimeout para evitar problemas de navegación durante el render
-        setTimeout(() => {
-          if (userData?.role === "arrendador") {
-            router.replace("/(tabs)/properties");
-          } else {
-            router.replace("/(tabs)");
-          }
-        }, 100);
-      } catch (err) {
-        console.warn("Router replace failed after login:", err);
+      
+      if (profileContext?.setProfileFromLogin) {
+        profileContext.setProfileFromLogin(userData);
       }
+      
+      setTimeout(() => {
+        if (userData?.role === "arrendador") {
+          router.replace("/(tabs)/properties");
+        } else {
+          router.replace("/(tabs)");
+        }
+      }, 100);
     },
     onError: (error: any) => {
       console.error("Login error:", error);
@@ -144,7 +146,6 @@ export function useAuthV2() {
         message = error;
       }
 
-      // Solo mostrar mensaje limpio, sin JSON
       Alert.alert("Error de inicio de sesión", message);
     },
   });
@@ -154,6 +155,7 @@ export function useAuthV2() {
       token: string;
       role: "rentante" | "arrendador";
     }) => {
+      setLogoutInProgress(false);
       const response = await api.post("/api/auth/google", {
         token: payload.token,
         role: payload.role,
@@ -169,20 +171,19 @@ export function useAuthV2() {
       }
       await storage.setUser(userData);
 
+      api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;      
       setUser(userData);
-      queryClient.setQueryData(["auth", "user"], userData);
-      try {
-        // Usar setTimeout para evitar problemas de navegación durante el render
-        setTimeout(() => {
-          if (userData?.role === "arrendador") {
-            router.replace("/(tabs)/properties");
-          } else {
-            router.replace("/(tabs)");
-          }
-        }, 100);
-      } catch (err) {
-        console.warn("Router replace failed after google login:", err);
+      if (profileContext?.setProfileFromLogin) {
+        profileContext.setProfileFromLogin(userData);
       }
+      
+      setTimeout(() => {
+        if (userData?.role === "arrendador") {
+          router.replace("/(tabs)/properties");
+        } else {
+          router.replace("/(tabs)");
+        }
+      }, 100);
     },
     onError: (error: any) => {
       console.error("Google login error:", error);
@@ -196,32 +197,37 @@ export function useAuthV2() {
         message = error;
       }
 
-      // Solo mostrar mensaje limpio, sin JSON
       Alert.alert("Error de inicio de sesión", message);
     },
   });
 
   const logout = useCallback(async () => {
     if (logoutInProgressRef.current) return;
+    
     logoutInProgressRef.current = true;
+    setLogoutInProgress(true);
 
     try {
-      await storage.clear();
-
       setUser(null);
-      queryClient.clear();
-      try {
-        router.replace("/(auth)/signin-options");
-      } catch (err) {
-        console.warn("Router replace failed after logout:", err);
+      
+      if (profileContext?.clearProfile) {
+        profileContext.clearProfile();
       }
+      
+      await storage.clear();
+      
+      delete api.defaults.headers.common["Authorization"];      
+      router.replace("/(auth)/signin-options");
     } catch (error) {
       console.error("Error en logout:", error);
       setUser(null);
     } finally {
       logoutInProgressRef.current = false;
+      setTimeout(() => {
+        setLogoutInProgress(false);
+      }, 150);
     }
-  }, [queryClient, router]);
+  }, [router, profileContext]);
 
   return {
     user,

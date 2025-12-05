@@ -10,10 +10,11 @@ export const api = axios.create({
 });
 
 let isRefreshing = false;
-let failedQueue: Array<{
+let isLoggingOut = false;
+let failedQueue: {
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
-}> = [];
+}[] = [];
 
 const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -27,16 +28,30 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
+export const setLogoutInProgress = (value: boolean) => {
+  isLoggingOut = value;
+  if (value) {
+    delete api.defaults.headers.common["Authorization"];
+  }
+};
+
 api.interceptors.request.use(
   async (config) => {
+    if (isLoggingOut) {
+      return Promise.reject(new Error("Logout in progress"));
+    }
+    
     try {
       const token = await storage.getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        delete config.headers.Authorization;
       }
       return config;
     } catch (error) {
       console.error("Error in request interceptor:", error);
+      delete config.headers.Authorization;
       return config;
     }
   },
