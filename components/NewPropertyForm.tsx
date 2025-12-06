@@ -61,8 +61,16 @@ export default function NewPropertyForm({
   const provincesOptions = provincesData?.map((p) => p.name) || [];
   const paymentTypesOptions = paymentTypesData?.map((pt) => pt.name) || [];
 
+  // Deshabilitar scroll del padre cuando algún dropdown está abierto
+  const isAnyDropdownOpen =
+    showTypePicker || showModePicker || showCityPicker || showPaymentPicker;
+
   return (
-    <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
+    <ScrollView
+      className="flex-1"
+      keyboardShouldPersistTaps="handled"
+      scrollEnabled={!isAnyDropdownOpen}
+    >
       <View className="p-4">
         <Text className="text-xl font-semibold text-center mb-4">
           {propertyToEdit ? "Editar propiedad" : "Nueva propiedad"}
