@@ -5,8 +5,9 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import Logo from "@/assets/logo";
 import { useRegisterForm } from "@/hooks/auth/use-register-form";
 import { FormField } from "@/components/forms/form";
@@ -45,8 +46,14 @@ export default function RegisterScreen() {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-1 bg-primary justify-end">
-          <View className=" items-center justify-center my-auto">
+        <View className="flex-1 bg-primary">
+          <Pressable 
+            onPress={() => router.back()} 
+            className="absolute top-12 left-5 z-10 p-2"
+          >
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </Pressable>
+          <View className="items-center justify-center my-auto">
             <Logo />
             <Text className="text-3xl font-medium tracking-tight text-white mt-3">
               RentaYa
@@ -162,10 +169,7 @@ export default function RegisterScreen() {
               </>
             ) : (
               <>
-                <View className="flex-row items-center justify-between mb-6">
-                  <Pressable onPress={() => setShowRoleSelection(true)}>
-                    <Ionicons name="arrow-back" size={24} color="#11181C" />
-                  </Pressable>
+                <View className="flex-row items-center justify-center mb-6">
                   <Text className="text-xl font-semibold">
                     Completa tu información
                   </Text>
@@ -218,11 +222,15 @@ export default function RegisterScreen() {
                 </View>
 
                 <Pressable
-                  className="bg-black rounded-xl py-4 items-center mt-6"
+                  className={`rounded-xl py-4 items-center mt-6 ${isLoading ? 'bg-black/70' : 'bg-black'}`}
                   onPress={handleSubmit(onSubmit)}
                   disabled={isLoading}
                 >
-                  <Text className="text-white font-semibold">Registrar</Text>
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text className="text-white font-semibold">Registrar</Text>
+                  )}
                 </Pressable>
                 <View className="items-center mt-5">
                   <Text className="text-gray-500 text-sm">

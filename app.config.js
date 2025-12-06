@@ -1,74 +1,76 @@
-const IS_DEV = process.env.APP_VARIANT === 'development';
+const IS_DEV = process.env.APP_VARIANT === "development";
 
 export default {
   expo: {
-    name: IS_DEV ? 'RentaYa (Dev)' : 'RentaYa',
-    slug: 'mobile',
-    version: '1.0.0',
-    orientation: 'portrait',
-    icon: './assets/images/icon.png',
-    scheme: 'com.rentaya.mobile',
-    userInterfaceStyle: 'automatic',
+    name: IS_DEV ? "RentaYa (Dev)" : "RentaYa",
+    slug: "mobile",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/images/logo.png",
+    scheme: "com.rentaya.mobile",
+    userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: IS_DEV ? 'com.rentaya.mobile.dev' : 'com.rentaya.mobile',
+      bundleIdentifier: IS_DEV
+        ? "com.rentaya.mobile.dev"
+        : "com.rentaya.mobile",
     },
     android: {
       adaptiveIcon: {
-        backgroundColor: '#E6F4FE',
-        foregroundImage: './assets/images/android-icon-foreground.png',
-        backgroundImage: './assets/images/android-icon-background.png',
-        monochromeImage: './assets/images/android-icon-monochrome.png'
+        backgroundColor: "#E6F4FE",
+        foregroundImage: "./assets/images/logo.png",
+        backgroundImage: "./assets/images/logo.png",
+        monochromeImage: "./assets/images/logo.png",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      package: IS_DEV ? 'com.rentaya.mobile.dev' : 'com.rentaya.mobile',
+      package: IS_DEV ? "com.rentaya.mobile.dev" : "com.rentaya.mobile",
       intentFilters: [
         {
-          action: 'VIEW',
+          action: "VIEW",
           data: [
             {
-              scheme: 'com.rentaya.mobile',
-              path: '/oauthredirect'
-            }
+              scheme: "com.rentaya.mobile",
+              path: "/oauthredirect",
+            },
           ],
-          category: ['BROWSABLE', 'DEFAULT']
-        }
-      ]
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ],
     },
     web: {
-      bundler: 'metro',
-      output: 'static',
-      favicon: './assets/images/favicon.png'
+      bundler: "metro",
+      output: "static",
+      favicon: "./assets/images/logo.png",
     },
     plugins: [
-      'expo-router',
-      'expo-dev-client',
+      "expo-router",
+      "expo-dev-client",
       [
-        'expo-splash-screen',
+        "expo-splash-screen",
         {
-          image: './assets/images/splash-icon.png',
+          image: "./assets/images/logo.png",
           imageWidth: 200,
-          resizeMode: 'contain',
-          backgroundColor: '#ffffff',
+          resizeMode: "contain",
+          backgroundColor: "#ffffff",
           dark: {
-            backgroundColor: '#000000'
-          }
-        }
+            backgroundColor: "#000000",
+          },
+        },
       ],
-      'expo-web-browser',
-      '@react-native-google-signin/google-signin'
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin",
     ],
     experiments: {
       typedRoutes: true,
-      reactCompiler: true
+      reactCompiler: true,
     },
     extra: {
       router: {},
       eas: {
-        projectId: 'af09df62-3364-418b-a362-4e8a2499c509'
-      }
-    }
-  }
+        projectId: "af09df62-3364-418b-a362-4e8a2499c509",
+      },
+    },
+  },
 };

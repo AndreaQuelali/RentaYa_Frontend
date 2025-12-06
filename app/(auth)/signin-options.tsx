@@ -1,5 +1,5 @@
 import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import Logo from '@/assets/logo';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -7,10 +7,18 @@ export default function SignInOptionsScreen() {
   return (
     <KeyboardAvoidingView className="flex-1 bg-primary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View className="flex-1 bg-primary justify-end">
+        <View className="flex-1 bg-primary">
+          <Pressable 
+            onPress={() => router.back()} 
+            className="absolute top-12 left-5 z-10 p-2"
+          >
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </Pressable>
           <View className="items-center justify-center my-auto">
             <Logo />
-            <Text className="text-3xl font-medium tracking-tight text-white mt-3">RentaYa</Text>
+            <Text className="text-3xl font-medium tracking-tight text-white mt-3">
+              RentaYa
+            </Text>
           </View>
 
           <View className="bg-white rounded-t-2xl border border-gray-200 px-5 pt-12 pb-20 w-screen">

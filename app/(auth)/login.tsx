@@ -1,8 +1,9 @@
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView } from 'react-native';
-import { Link } from 'expo-router';
+import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import { Link,router } from 'expo-router';
 import Logo from '@/assets/logo';
 import { FormField } from '@/components/forms/form';
 import { useLoginForm } from '@/hooks/auth/use-login-form';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const { form, onSubmit, isLoading } = useLoginForm();
@@ -20,14 +21,19 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="flex-1 justify-center items-center px-6 pt-12 pb-8">
-            <View className="items-center">
-              <Logo />
-              <Text className="text-4xl font-bold text-white mt-4 tracking-tight">RentaYa</Text>
-              <Text className="text-white/80 text-base mt-2 text-center">
-                Tu hogar ideal te está esperando
-              </Text>
-            </View>
+        <View className="flex-1 bg-primary">
+          <Pressable 
+            onPress={() => router.back()} 
+            className="absolute top-12 left-5 z-10 p-2"
+          >
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </Pressable>
+          <View className="items-center justify-center my-auto">
+            <Logo />
+            <Text className="text-3xl font-medium tracking-tight text-white mt-3">
+              RentaYa
+            </Text>
+          </View>
           </View>
 
           <View className="bg-white rounded-t-3xl px-6 pt-8 pb-12 min-h-[400px]">
@@ -75,13 +81,17 @@ export default function LoginScreen() {
 
             <View className="mt-8 space-y-4">
               <Pressable 
-                className={`bg-black rounded-xl py-4 items-center ${isLoading ? 'opacity-70' : ''}`}
+                className={`rounded-xl py-4 items-center ${isLoading ? 'bg-black/70' : 'bg-black'}`}
                 onPress={handleSubmit(onSubmit)}
                 disabled={isLoading}
               >
-                <Text className="text-white font-semibold text-base">
-                  {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-                </Text>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white font-semibold text-base">
+                    Iniciar sesión
+                  </Text>
+                )}
               </Pressable>
             </View>
 

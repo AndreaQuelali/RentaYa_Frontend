@@ -8,9 +8,11 @@ import {
   RefreshControl,
   Pressable,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import { useFocusEffect } from "expo-router";
 import { api } from "@/lib/api";
 import Logo from "@/assets/logo";
 import {
@@ -67,6 +69,7 @@ interface ReportItem {
   id: string;
   userId: string;
   propertyId: string;
+  interestId?: string;
   type: string;
   status: string;
   totalPrice: string;
@@ -93,7 +96,7 @@ interface FilterModalProps {
   visible: boolean;
   title: string;
   options: { label: string; value: string | null }[];
-  selectedValue: string | null;
+  selectedValues: string[];
   onSelect: (value: string | null) => void;
   onClose: () => void;
 }
@@ -102,7 +105,7 @@ function FilterModal({
   visible,
   title,
   options,
-  selectedValue,
+  selectedValues,
   onSelect,
   onClose,
 }: FilterModalProps) {
@@ -124,13 +127,17 @@ function FilterModal({
           </View>
           <ScrollView>
             {options.map((opt) => {
-              const isSelected = selectedValue === opt.value;
+              const isSelected =
+                opt.value !== null && selectedValues.includes(opt.value);
               return (
                 <Pressable
                   key={opt.label}
                   onPress={() => {
                     onSelect(opt.value);
-                    onClose();
+                    if (opt.value === null) {
+                      // Si selecciona "Todos", cerrar el modal
+                      onClose();
+                    }
                   }}
                   className={`flex-row items-center justify-between px-3 py-3 rounded-xl mb-2 ${
                     isSelected ? "bg-primary/10" : "bg-gray-50"
@@ -188,7 +195,22 @@ function SummaryCards({
       bgColor: "bg-blue-50",
       textColor: "text-blue-600",
     },
-
+    {
+      title: "Propiedades en alquiler",
+      value: stats.rentedCount.toString(),
+      icon: "home-outline",
+      color: "bg-green-500",
+      bgColor: "bg-green-50",
+      textColor: "text-green-600",
+    },
+    {
+      title: "Propiedades en anticrético",
+      value: stats.anticreticoCount.toString(),
+      icon: "key-outline",
+      color: "bg-purple-500",
+      bgColor: "bg-purple-50",
+      textColor: "text-purple-600",
+    },
     {
       title: "Ingresos Estimados",
       value: `Bs ${stats.estimatedIncome.toLocaleString()}`,
@@ -254,9 +276,9 @@ function ReportsTable({
   isLoading?: boolean;
   onExport: () => void;
   filters: {
-    propertyType: string | null;
-    operationType: string | null;
-    province: string | null;
+    propertyType: string[];
+    operationType: string[];
+    province: string[];
   };
   onFilterChange: (
     filter: "propertyType" | "operationType" | "province",
@@ -279,28 +301,41 @@ function ReportsTable({
   // Filtrar reportes - debe estar antes de cualquier return
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
-      if (
-        filters.propertyType &&
-        report.property?.propertyType?.name !== filters.propertyType
-      ) {
-        return false;
+      // Filtro por tipo de propiedad (múltiple)
+      if (filters.propertyType.length > 0) {
+        const propertyTypeName = report.property?.propertyType?.name;
+        if (
+          !propertyTypeName ||
+          !filters.propertyType.includes(propertyTypeName)
+        ) {
+          return false;
+        }
       }
-      if (filters.operationType) {
+
+      // Filtro por modalidad (múltiple)
+      if (filters.operationType.length > 0) {
         const operationTypeName =
           typeof report.property?.operationType === "object" &&
           report.property?.operationType !== null
             ? report.property.operationType.name
             : report.property?.operationType;
-        if (operationTypeName !== filters.operationType) {
+        if (
+          !operationTypeName ||
+          !filters.operationType.includes(operationTypeName)
+        ) {
           return false;
         }
       }
-      if (
-        filters.province &&
-        report.property?.province?.name !== filters.province
-      ) {
-        return false;
+
+      // Filtro por provincia (múltiple)
+      if (filters.province.length > 0) {
+        const provinceName =
+          report.property?.province?.name || report.property?.city;
+        if (!provinceName || !filters.province.includes(provinceName)) {
+          return false;
+        }
       }
+
       return true;
     });
   }, [reports, filters]);
@@ -381,7 +416,10 @@ function ReportsTable({
               Provincia
             </Text>
             <Text className="w-32 text-xs font-semibold text-gray-700">
-              Precio
+              Inquilino
+            </Text>
+            <Text className="w-32 text-xs font-semibold text-gray-700">
+              Precio Total
             </Text>
             <Text className="w-24 text-xs font-semibold text-gray-700">
               Rating
@@ -405,6 +443,7 @@ function ReportsTable({
             const rating = item.property?.averageRating
               ? item.property.averageRating.toFixed(1)
               : "N/A";
+            const userName = item.user?.fullName || "N/A";
 
             return (
               <View
@@ -431,6 +470,14 @@ function ReportsTable({
                 </View>
                 <View className="w-32 justify-center">
                   <Text className="text-sm text-gray-600">{provinceName}</Text>
+                </View>
+                <View className="w-32 justify-center">
+                  <Text
+                    className="text-sm text-gray-900 font-medium"
+                    numberOfLines={1}
+                  >
+                    {userName}
+                  </Text>
                 </View>
                 <View className="w-32 justify-center">
                   <Text className="text-sm text-gray-900 font-semibold">
@@ -461,14 +508,15 @@ function ReportsTable({
 
 export default function ReportsScreen() {
   const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshingOnFocus, setIsRefreshingOnFocus] = useState(false);
   const [filters, setFilters] = useState<{
-    propertyType: string | null;
-    operationType: string | null;
-    province: string | null;
+    propertyType: string[];
+    operationType: string[];
+    province: string[];
   }>({
-    propertyType: null,
-    operationType: null,
-    province: null,
+    propertyType: [],
+    operationType: [],
+    province: [],
   });
   const [propertyTypeModalVisible, setPropertyTypeModalVisible] =
     useState(false);
@@ -512,6 +560,18 @@ export default function ReportsScreen() {
     },
   });
 
+  // Recargar datos cuando se enfoca la pantalla
+  useFocusEffect(
+    React.useCallback(() => {
+      setIsRefreshingOnFocus(true);
+      const loadData = async () => {
+        await Promise.all([refetchStats(), refetchReports()]);
+        setIsRefreshingOnFocus(false);
+      };
+      loadData();
+    }, [refetchStats, refetchReports])
+  );
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await Promise.all([refetchStats(), refetchReports()]);
@@ -525,12 +585,16 @@ export default function ReportsScreen() {
     }
 
     try {
+      const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      const fileName = `reportes_propiedades_${currentDate}.csv`;
+
       const header = [
         "Propiedad",
         "Tipo",
         "Modalidad",
         "Provincia",
-        "Precio (Bs)",
+        "Inquilino",
+        "Precio Total (Bs)",
         "Rating",
         "Fecha inicio",
         "Fecha fin",
@@ -548,6 +612,7 @@ export default function ReportsScreen() {
         const rating = item.property?.averageRating
           ? item.property.averageRating.toFixed(1)
           : "N/A";
+        const userName = item.user?.fullName || "N/A";
 
         const formatDate = (dateString: string) => {
           try {
@@ -558,7 +623,7 @@ export default function ReportsScreen() {
               year: "numeric",
             });
           } catch {
-            return "";
+            return "N/A";
           }
         };
 
@@ -567,6 +632,7 @@ export default function ReportsScreen() {
           propertyTypeName,
           operationTypeName,
           provinceName,
+          userName,
           Number(item.totalPrice || 0).toLocaleString("es-BO"),
           rating,
           formatDate(item.startDate),
@@ -578,10 +644,7 @@ export default function ReportsScreen() {
 
       const csvContent = [header.join(","), ...rows].join("\n");
 
-      const file = new FileSystem.File(
-        FileSystem.Paths.document,
-        "reportes_propiedades.csv"
-      );
+      const file = new FileSystem.File(FileSystem.Paths.document, fileName);
       await file.write(csvContent);
 
       const canShare = await Sharing.isAvailableAsync();
@@ -612,6 +675,12 @@ export default function ReportsScreen() {
     }
 
     try {
+      // Formato: YYYY-MM-DD_HH-MM-SS
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
+      const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "-"); // HH-MM-SS
+      const fileName = `reporte-propiedades-${dateStr}_${timeStr}.pdf`;
+
       const rowsHtml = reports
         .map((item) => {
           const operationTypeName =
@@ -625,6 +694,7 @@ export default function ReportsScreen() {
           const rating = item.property?.averageRating
             ? item.property.averageRating.toFixed(1)
             : "N/A";
+          const userName = item.user?.fullName || "N/A";
 
           const formatDate = (dateString: string) => {
             try {
@@ -635,7 +705,7 @@ export default function ReportsScreen() {
                 year: "numeric",
               });
             } catch {
-              return "";
+              return "N/A";
             }
           };
 
@@ -644,6 +714,7 @@ export default function ReportsScreen() {
 <td>${propertyTypeName}</td>
 <td>${operationTypeName}</td>
 <td>${provinceName}</td>
+<td>${userName}</td>
 <td>Bs ${Number(item.totalPrice || 0).toLocaleString("es-BO")}</td>
 <td>${rating}</td>
 <td>${formatDate(item.startDate)}</td>
@@ -657,17 +728,20 @@ export default function ReportsScreen() {
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Reportes de Propiedades</title>
+    <title>Reportes de Propiedades - ${dateStr}</title>
     <style>
       body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 24px; }
-      h1 { font-size: 20px; margin-bottom: 16px; }
-      table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
-      th { background-color: #f3f4f6; }
+      h1 { font-size: 20px; margin-bottom: 8px; }
+      .date { font-size: 12px; color: #6b7280; margin-bottom: 16px; }
+      table { width: 100%; border-collapse: collapse; font-size: 10px; }
+      th, td { border: 1px solid #e5e7eb; padding: 4px 6px; text-align: left; }
+      th { background-color: #f3f4f6; font-weight: 600; }
+      td { word-wrap: break-word; }
     </style>
   </head>
   <body>
     <h1>Reportes de Propiedades</h1>
+    <div class="date">Generado el: ${new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })} ${new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</div>
     <table>
       <thead>
         <tr>
@@ -675,7 +749,8 @@ export default function ReportsScreen() {
           <th>Tipo</th>
           <th>Modalidad</th>
           <th>Provincia</th>
-          <th>Precio (Bs)</th>
+          <th>Inquilino</th>
+          <th>Precio Total (Bs)</th>
           <th>Rating</th>
           <th>Fecha inicio</th>
           <th>Fecha fin</th>
@@ -688,13 +763,13 @@ export default function ReportsScreen() {
   </body>
 </html>`;
 
-      const { uri } = await Print.printToFileAsync({ html });
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
         await Sharing.shareAsync(uri, {
           mimeType: "application/pdf",
-          dialogTitle: "Exportar reportes en PDF",
+          dialogTitle: `Exportar reportes en PDF - ${fileName}`,
         });
       } else {
         Alert.alert("PDF generado", `El archivo PDF fue generado en: ${uri}`);
@@ -720,10 +795,32 @@ export default function ReportsScreen() {
     filter: "propertyType" | "operationType" | "province",
     value: string | null
   ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filter]: value === prev[filter] ? null : value, // Toggle filter
-    }));
+    setFilters((prev) => {
+      if (value === null) {
+        // Si selecciona "Todos", limpiar el filtro
+        return {
+          ...prev,
+          [filter]: [],
+        };
+      }
+
+      const currentValues = prev[filter];
+      const isSelected = currentValues.includes(value);
+
+      if (isSelected) {
+        // Si ya está seleccionado, removerlo
+        return {
+          ...prev,
+          [filter]: currentValues.filter((v) => v !== value),
+        };
+      } else {
+        // Si no está seleccionado, agregarlo
+        return {
+          ...prev,
+          [filter]: [...currentValues, value],
+        };
+      }
+    });
   };
 
   const stats: PropertyStats = statsData?.data || {
@@ -740,11 +837,18 @@ export default function ReportsScreen() {
     ? reportsData.data
     : [];
 
+  // Mostrar loading si es la carga inicial o si se está recargando al enfocar la pantalla
+  const isLoading = statsLoading || reportsLoading || isRefreshingOnFocus;
+
   return (
     <ScrollView
       className="flex-1 bg-gray-50"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={["#D65E48"]}
+        />
       }
     >
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
@@ -755,120 +859,143 @@ export default function ReportsScreen() {
       <View className="p-4">
         <Text className="text-2xl font-bold text-gray-900 mb-2">Reportes</Text>
 
-        <SummaryCards stats={stats} isLoading={statsLoading} />
-
-        {/* Filtros */}
-        <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-          <Text className="text-md font-semibold text-gray-700 mb-3">
-            Filtrar por:
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            <Pressable
-              onPress={() => setPropertyTypeModalVisible(true)}
-              className={`px-4 py-2 rounded-lg border ${
-                filters.propertyType
-                  ? "bg-primary border-primary"
-                  : "bg-white border-gray-300"
-              }`}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filters.propertyType ? "text-white" : "text-gray-700"
-                }`}
-              >
-                {filters.propertyType || "Tipo de propiedad"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setOperationTypeModalVisible(true)}
-              className={`px-4 py-2 rounded-lg border ${
-                filters.operationType
-                  ? "bg-primary border-primary"
-                  : "bg-white border-gray-300"
-              }`}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filters.operationType ? "text-white" : "text-gray-700"
-                }`}
-              >
-                {filters.operationType || "Modalidad"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setProvinceModalVisible(true)}
-              className={`px-4 py-2 rounded-lg border ${
-                filters.province
-                  ? "bg-primary border-primary"
-                  : "bg-white border-gray-300"
-              }`}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filters.province ? "text-white" : "text-gray-700"
-                }`}
-              >
-                {filters.province || "Provincia"}
-              </Text>
-            </Pressable>
+        {isLoading && (
+          <View className="mt-10 items-center justify-center">
+            <ActivityIndicator size="large" color="#D65E48" />
+            <Text className="text-gray-500 mt-2">Cargando reportes...</Text>
           </View>
-        </View>
+        )}
 
-        {/* Modales de filtros */}
-        <FilterModal
-          visible={propertyTypeModalVisible}
-          title="Tipo de propiedad"
-          selectedValue={filters.propertyType}
-          onSelect={(value) => handleFilterChange("propertyType", value)}
-          onClose={() => setPropertyTypeModalVisible(false)}
-          options={[
-            { label: "Todos", value: null },
-            ...(propertyTypes?.map((pt) => ({
-              label: pt.name,
-              value: pt.name as string,
-            })) || []),
-          ]}
-        />
+        {!isLoading && (
+          <>
+            <SummaryCards stats={stats} isLoading={statsLoading} />
 
-        <FilterModal
-          visible={operationTypeModalVisible}
-          title="Modalidad"
-          selectedValue={filters.operationType}
-          onSelect={(value) => handleFilterChange("operationType", value)}
-          onClose={() => setOperationTypeModalVisible(false)}
-          options={[
-            { label: "Todas", value: null },
-            ...(operationTypes?.map((ot) => ({
-              label: ot.name,
-              value: ot.name as string,
-            })) || []),
-          ]}
-        />
+            {/* Filtros */}
+            <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+              <Text className="text-md font-semibold text-gray-700 mb-3">
+                Filtrar por:
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                <Pressable
+                  onPress={() => setPropertyTypeModalVisible(true)}
+                  className={`px-4 py-2 rounded-lg border ${
+                    filters.propertyType.length > 0
+                      ? "bg-primary border-primary"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      filters.propertyType.length > 0
+                        ? "text-white"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {filters.propertyType.length > 0
+                      ? `Tipo (${filters.propertyType.length})`
+                      : "Tipo de propiedad"}
+                  </Text>
+                </Pressable>
 
-        <FilterModal
-          visible={provinceModalVisible}
-          title="Provincia"
-          selectedValue={filters.province}
-          onSelect={(value) => handleFilterChange("province", value)}
-          onClose={() => setProvinceModalVisible(false)}
-          options={[
-            { label: "Todas", value: null },
-            ...(provinces?.map((p) => ({
-              label: p.name,
-              value: p.name as string,
-            })) || []),
-          ]}
-        />
+                <Pressable
+                  onPress={() => setOperationTypeModalVisible(true)}
+                  className={`px-4 py-2 rounded-lg border ${
+                    filters.operationType.length > 0
+                      ? "bg-primary border-primary"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      filters.operationType.length > 0
+                        ? "text-white"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {filters.operationType.length > 0
+                      ? `Modalidad (${filters.operationType.length})`
+                      : "Modalidad"}
+                  </Text>
+                </Pressable>
 
-        <ReportsTable
-          reports={reports}
-          isLoading={reportsLoading}
-          onExport={handleExport}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-        />
+                <Pressable
+                  onPress={() => setProvinceModalVisible(true)}
+                  className={`px-4 py-2 rounded-lg border ${
+                    filters.province.length > 0
+                      ? "bg-primary border-primary"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      filters.province.length > 0
+                        ? "text-white"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {filters.province.length > 0
+                      ? `Provincia (${filters.province.length})`
+                      : "Provincia"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Modales de filtros */}
+            <FilterModal
+              visible={propertyTypeModalVisible}
+              title="Tipo de propiedad"
+              selectedValues={filters.propertyType}
+              onSelect={(value) => handleFilterChange("propertyType", value)}
+              onClose={() => setPropertyTypeModalVisible(false)}
+              options={[
+                { label: "Todos", value: null },
+                ...(propertyTypes?.map((pt) => ({
+                  label: pt.name,
+                  value: pt.name as string,
+                })) || []),
+              ]}
+            />
+
+            <FilterModal
+              visible={operationTypeModalVisible}
+              title="Modalidad"
+              selectedValues={filters.operationType}
+              onSelect={(value) => handleFilterChange("operationType", value)}
+              onClose={() => setOperationTypeModalVisible(false)}
+              options={[
+                { label: "Todas", value: null },
+                ...(operationTypes?.map((ot) => ({
+                  label: ot.name,
+                  value: ot.name as string,
+                })) || []),
+              ]}
+            />
+
+            <FilterModal
+              visible={provinceModalVisible}
+              title="Provincia"
+              selectedValues={filters.province}
+              onSelect={(value) => handleFilterChange("province", value)}
+              onClose={() => setProvinceModalVisible(false)}
+              options={[
+                { label: "Todas", value: null },
+                ...(provinces?.map((p) => ({
+                  label: p.name,
+                  value: p.name as string,
+                })) || []),
+              ]}
+            />
+
+            <ReportsTable
+              reports={reports}
+              isLoading={reportsLoading}
+              onExport={handleExport}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+            />
+          </>
+        )}
       </View>
     </ScrollView>
   );

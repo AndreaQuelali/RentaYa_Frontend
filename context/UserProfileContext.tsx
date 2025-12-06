@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 
@@ -21,59 +21,87 @@ interface UserProfileContextType {
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   uploadProfileImage: (uri: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  clearProfile: () => void;
+  setProfileFromLogin: (userData: any) => void;
 }
 
-const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
+export const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
 
 export function UserProfileProvider({ children }: { children: React.ReactNode }) {
+  const { user, updateUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
 
-  const fetchProfile = React.useCallback(async () => {
-    if (!isAuthenticated) {
+  useEffect(() => {
+    if (user?.id) {
+      if (!profile || profile.id !== user.id || profile.profilePhoto !== user.profilePhoto) {
+        const userProfile: UserProfile = {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          phone: user.phone || '',
+          profilePhoto: user.profilePhoto || null,
+          verificationStatus: user.statusVerification || 'pending',
+          createdAt: (user as any).createdAt || new Date().toISOString(),
+          updatedAt: (user as any).updatedAt || new Date().toISOString(),
+        };
+        setProfile(userProfile);
+        setLoading(false);
+      }
+    } else if (!user && profile) {
+      setProfile(null);
+    }
+  }, [user?.id, user?.profilePhoto, user?.fullName, user?.phone, user?.email]);
+
+  
+  const fetchProfile = async () => {
+    if (!user?.id) {
       return;
     }
-    
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
       const response = await api.get('/api/users/profile');
-      setProfile(response.data.data);
-    } catch (err: any) {
-      setError(err.message || 'Error al obtener el perfil');
-      console.error('Error fetching profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated]);
-
-  const updateProfile = async (data: Partial<UserProfile>) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await api.put('/api/users/profile', data);
-      setProfile(response.data.data);
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar el perfil');
-      throw err;
+      const fetchedProfile = response.data.data as UserProfile;
+      if (fetchedProfile.id !== user.id) {
+        throw new Error('Profile mismatch during manual fetch');
+      }
+      setProfile(fetchedProfile);
+    } catch (error) {
+      console.error('[Profile] Error in manual fetch:', error);
+      setProfile(null);
     } finally {
       setLoading(false);
     }
   };
 
+  const updateProfile = async (data: Partial<UserProfile>) => {
+    try {
+      const response = await api.put('/api/users/profile', data);
+      const updatedProfile = response.data.data as UserProfile;
+      
+      if (user?.id && updatedProfile.id === user.id) {
+        setProfile(updatedProfile);
+        await updateUser({
+          fullName: updatedProfile.fullName,
+          phone: updatedProfile.phone,
+          email: updatedProfile.email,
+        });
+      }
+    } catch (err: any) {
+      console.error('[Profile] Error updating profile:', err);
+      throw err;
+    }
+  };
+
   const uploadProfileImage = async (uri: string) => {
     try {
-      setLoading(true);
-      setError(null);
-
       const formData = new FormData();
       const filename = uri.split('/').pop() || 'profile.jpg';
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-      formData.append('image', {
+      formData.append('profileImage', {
         uri,
         name: filename,
         type,
@@ -84,13 +112,18 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      setProfile(response.data.data);
+      
+      const updatedProfile = response.data.data as UserProfile;
+      
+      if (user?.id && updatedProfile.id === user.id) {
+        setProfile(updatedProfile);
+        await updateUser({ 
+          profilePhoto: updatedProfile.profilePhoto 
+        } as any);
+      }
     } catch (err: any) {
-      setError(err.message || 'Error al subir la imagen');
+      console.error('[Profile] Error uploading profile image:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -98,13 +131,27 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     await fetchProfile();
   };
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchProfile();
-    } else {
-      setProfile(null);
-    }
-  }, [isAuthenticated, fetchProfile]);
+  const clearProfile = () => {
+    setProfile(null);
+    setLoading(false);
+    setError(null);
+  };
+
+  const setProfileFromLogin = (userData: any) => {
+    const userProfile: UserProfile = {
+      id: userData.id,
+      email: userData.email,
+      fullName: userData.fullName,
+      phone: userData.phone || '',
+      profilePhoto: userData.profilePhoto || null,
+      verificationStatus: userData.statusVerification || 'pending',
+      createdAt: userData.createdAt || new Date().toISOString(),
+      updatedAt: userData.updatedAt || new Date().toISOString(),
+    };
+    setProfile(userProfile);
+    setLoading(false);
+    setError(null);
+  };
 
   return (
     <UserProfileContext.Provider
@@ -116,6 +163,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         updateProfile,
         uploadProfileImage,
         refreshProfile,
+        clearProfile,
+        setProfileFromLogin,
       }}
     >
       {children}

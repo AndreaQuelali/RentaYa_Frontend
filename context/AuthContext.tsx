@@ -11,6 +11,7 @@ interface AuthContextType {
   login?: any;
   googleLogin?: any;
   logout: () => Promise<void>;
+  updateUser: (updatedData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

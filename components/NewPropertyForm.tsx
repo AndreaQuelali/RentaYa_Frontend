@@ -61,8 +61,16 @@ export default function NewPropertyForm({
   const provincesOptions = provincesData?.map((p) => p.name) || [];
   const paymentTypesOptions = paymentTypesData?.map((pt) => pt.name) || [];
 
+  // Deshabilitar scroll del padre cuando algún dropdown está abierto
+  const isAnyDropdownOpen =
+    showTypePicker || showModePicker || showCityPicker || showPaymentPicker;
+
   return (
-    <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
+    <ScrollView
+      className="flex-1"
+      keyboardShouldPersistTaps="handled"
+      scrollEnabled={!isAnyDropdownOpen}
+    >
       <View className="p-4">
         <Text className="text-xl font-semibold text-center mb-4">
           {propertyToEdit ? "Editar propiedad" : "Nueva propiedad"}
@@ -246,19 +254,17 @@ export default function NewPropertyForm({
         <Pressable
           disabled={submitting}
           onPress={submitForm}
-          className={`bg-black rounded-xl py-4 items-center mt-6 ${
-            submitting ? "opacity-50" : "opacity-100"
+          className={`rounded-xl py-4 items-center mt-6 ${
+            submitting ? "bg-black/70" : "bg-black"
           }`}
         >
-          <Text className="text-white font-semibold">
-            {submitting
-              ? propertyToEdit
-                ? "Actualizando..."
-                : "Publicando..."
-              : propertyToEdit
-                ? "Actualizar"
-                : "Publicar"}
-          </Text>
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text className="text-white font-semibold">
+              {propertyToEdit ? "Actualizar" : "Publicar"}
+            </Text>
+          )}
         </Pressable>
       </View>
     </ScrollView>

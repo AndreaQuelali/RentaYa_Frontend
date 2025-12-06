@@ -6,9 +6,17 @@
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
+    "android:release": "cd android && ./gradlew assembleRelease && cd ..",
+    "android:clean": "cd android && ./gradlew clean && cd ..",
+    "android:install": "adb install android/app/build/outputs/apk/release/app-release.apk",
+    "build:android": "npm run android:clean && npm run android:release && cp android/app/build/outputs/apk/release/app-release.apk RentaYa-v1.0.0-release.apk && echo '\n✅ APK generado exitosamente: RentaYa-v1.0.0-release.apk'",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "setup:testing": "node ./scripts/setup-testing.js",
+    "build:dev": "eas build --profile development-apk --platform android",
+    "build:dev-debug": "cd android && ./gradlew assembleDebug && cd ..",
+    "install:dev": "adb install android/app/build/outputs/apk/debug/app-debug.apk"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

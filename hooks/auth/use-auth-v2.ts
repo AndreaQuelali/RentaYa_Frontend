@@ -1,9 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { api, setLogoutInProgress } from "@/lib/api";
 import { storage } from "@/lib/storage";
 import { Alert } from "react-native";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useContext } from "react";
 import { useRouter } from "expo-router";
+import { UserProfileContext } from "@/context/UserProfileContext";
 
 export type User = {
   id: string;
@@ -12,6 +13,7 @@ export type User = {
   phone?: string;
   role?: string;
   statusVerification?: string;
+  profilePhoto?: string | null;
 };
 
 export type AuthResponse = {
@@ -28,8 +30,8 @@ export type BackendResponse = {
 };
 
 export function useAuthV2() {
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const profileContext = useContext(UserProfileContext);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const initCheckRef = useRef(false);
@@ -41,6 +43,8 @@ export function useAuthV2() {
 
     const initialize = async () => {
       try {
+        await storage.checkAndClearCorruptedStorage();
+
         const isValid = await storage.validateSession();
 
         if (isValid) {
@@ -56,7 +60,11 @@ export function useAuthV2() {
         }
       } catch (error) {
         console.error("Error durante inicialización:", error);
-        await storage.clear();
+        try {
+          await storage.clear();
+        } catch (clearError) {
+          console.error("Error al limpiar storage:", clearError);
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -74,12 +82,20 @@ export function useAuthV2() {
         const isValid = await storage.validateSession();
         if (!isValid) {
           console.warn("Sesión invalidada detectada");
-          await storage.clear();
+          try {
+            await storage.clear();
+          } catch (clearError) {
+            console.error("Error al limpiar storage:", clearError);
+          }
           setUser(null);
         }
       } catch (error) {
         console.error("Error verificando sesión:", error);
-        await storage.clear();
+        try {
+          await storage.clear();
+        } catch (clearError) {
+          console.error("Error al limpiar storage:", clearError);
+        }
         setUser(null);
       }
     };
@@ -90,6 +106,7 @@ export function useAuthV2() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
+      setLogoutInProgress(false);
       const response = await api.post("/api/auth/login", credentials);
       return response.data as BackendResponse;
     },
@@ -102,21 +119,26 @@ export function useAuthV2() {
       }
       await storage.setUser(userData);
 
+      api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+      
       setUser(userData);
-      queryClient.setQueryData(["auth", "user"], userData);
-      try {
+      
+      if (profileContext?.setProfileFromLogin) {
+        profileContext.setProfileFromLogin(userData);
+      }
+      
+      setTimeout(() => {
         if (userData?.role === "arrendador") {
           router.replace("/(tabs)/properties");
         } else {
           router.replace("/(tabs)");
         }
-      } catch (err) {
-        console.warn("Router replace failed after login:", err);
-      }
+      }, 100);
     },
     onError: (error: any) => {
       console.error("Login error:", error);
       let message = "Error al iniciar sesión";
+
       if (error?.response?.data?.message) {
         message = error.response.data.message;
       } else if (error?.message) {
@@ -124,7 +146,8 @@ export function useAuthV2() {
       } else if (typeof error === "string") {
         message = error;
       }
-      Alert.alert("Error", message + "\n" + JSON.stringify(error));
+
+      Alert.alert("Error de inicio de sesión", message);
     },
   });
 
@@ -133,6 +156,7 @@ export function useAuthV2() {
       token: string;
       role: "rentante" | "arrendador";
     }) => {
+      setLogoutInProgress(false);
       const response = await api.post("/api/auth/google", {
         token: payload.token,
         role: payload.role,
@@ -148,21 +172,24 @@ export function useAuthV2() {
       }
       await storage.setUser(userData);
 
+      api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;      
       setUser(userData);
-      queryClient.setQueryData(["auth", "user"], userData);
-      try {
+      if (profileContext?.setProfileFromLogin) {
+        profileContext.setProfileFromLogin(userData);
+      }
+      
+      setTimeout(() => {
         if (userData?.role === "arrendador") {
           router.replace("/(tabs)/properties");
         } else {
           router.replace("/(tabs)");
         }
-      } catch (err) {
-        console.warn("Router replace failed after google login:", err);
-      }
+      }, 100);
     },
     onError: (error: any) => {
       console.error("Google login error:", error);
       let message = "Error al iniciar sesión con Google";
+
       if (error?.response?.data?.message) {
         message = error.response.data.message;
       } else if (error?.message) {
@@ -170,31 +197,46 @@ export function useAuthV2() {
       } else if (typeof error === "string") {
         message = error;
       }
-      Alert.alert("Error", message + "\n" + JSON.stringify(error));
+
+      Alert.alert("Error de inicio de sesión", message);
     },
   });
 
+  const updateUser = useCallback(async (updatedData: Partial<User>) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, ...updatedData };
+    setUser(updatedUser);
+    await storage.setUser(updatedUser);
+  }, [user]);
+
   const logout = useCallback(async () => {
     if (logoutInProgressRef.current) return;
+    
     logoutInProgressRef.current = true;
+    setLogoutInProgress(true);
 
     try {
-      await storage.clear();
-
       setUser(null);
-      queryClient.clear();
-      try {
-        router.replace("/(auth)/signin-options");
-      } catch (err) {
-        console.warn("Router replace failed after logout:", err);
+      
+      if (profileContext?.clearProfile) {
+        profileContext.clearProfile();
       }
+      
+      await storage.clear();
+      
+      delete api.defaults.headers.common["Authorization"];      
+      router.replace("/(auth)/signin-options");
     } catch (error) {
       console.error("Error en logout:", error);
       setUser(null);
     } finally {
       logoutInProgressRef.current = false;
+      setTimeout(() => {
+        setLogoutInProgress(false);
+      }, 150);
     }
-  }, [queryClient, router]);
+  }, [router, profileContext]);
 
   return {
     user,
@@ -207,5 +249,6 @@ export function useAuthV2() {
     googleLogin: googleLoginMutation,
 
     logout,
+    updateUser,
   };
 }

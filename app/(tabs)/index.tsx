@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Logo from "@/assets/logo";
@@ -25,7 +26,11 @@ interface Property {
   bathrooms: number;
   areaM2?: number;
   price: number;
-  operationType: string;
+  operationType: string | { id: string; name: string };
+  propertyType?: { id: string; name: string };
+  province?: { id: string; name: string };
+  latitude?: number;
+  longitude?: number;
   propertyPhotos?: {
     id: string;
     url: string;
@@ -36,6 +41,7 @@ export default function HomeScreen() {
   const [items, setItems] = useState<Property[]>([]);
   const [filteredItems, setFilteredItems] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -48,9 +54,13 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const fetchData = async () => {
+  const fetchData = async (isRefreshing = false) => {
     try {
-      setLoading(true);
+      if (isRefreshing) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       const res = await api.get("/api/properties");
 
@@ -71,7 +81,12 @@ export default function HomeScreen() {
       setError("No se pudieron cargar los inmuebles");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    fetchData(true);
   };
 
   useEffect(() => {
@@ -92,32 +107,28 @@ export default function HomeScreen() {
 
       // Filtro por provincia
       if (filters.provincia) {
-        filtered = filtered.filter(
-          (property) =>
-            property.city?.toLowerCase() === filters.provincia?.toLowerCase()
-        );
+        filtered = filtered.filter((property) => {
+          const provinceName = property.province?.name || '';
+          return provinceName.toLowerCase() === filters.provincia?.toLowerCase();
+        });
       }
 
       // Filtro por tipo de propiedad
       if (filters.tipoPropiedad) {
-        filtered = filtered.filter((property) =>
-          property.title.includes(filters.tipoPropiedad!)
-        );
+        filtered = filtered.filter((property) => {
+          const propertyTypeName = property.propertyType?.name || '';
+          return propertyTypeName.toLowerCase() === filters.tipoPropiedad?.toLowerCase();
+        });
       }
 
       // Filtro por modalidad
       if (filters.modalidad) {
-        const modalidadMap: { [key: string]: string } = {
-          Alquiler: "RENT",
-          Venta: "SALE",
-          Anticrético: "ANTICRETICO",
-        };
-        const operationType = modalidadMap[filters.modalidad];
-        if (operationType) {
-          filtered = filtered.filter(
-            (property) => property.operationType === operationType
-          );
-        }
+        filtered = filtered.filter((property) => {
+          const operationTypeName = typeof property.operationType === 'object' && property.operationType?.name
+            ? property.operationType.name
+            : property.operationType || '';
+          return operationTypeName.toLowerCase() === filters.modalidad?.toLowerCase();
+        });
       }
 
       // Filtro por rango de precio
@@ -140,14 +151,17 @@ export default function HomeScreen() {
     router.push(`/property/${propertyId}`);
   };
 
-  const getOperationTypeLabel = (operationType: string) => {
+  const getOperationTypeLabel = (operationType: string | { id: string; name: string }) => {
+    if (typeof operationType === 'object' && operationType?.name) {
+      return operationType.name;
+    }
     const labels: { [key: string]: string } = {
       RENT: "Alquiler",
       ANTICRETICO: "Anticrético",
       rent: "Alquiler",
       anticretico: "Anticrético",
     };
-    return labels[operationType] || operationType;
+    return labels[operationType as string] || operationType;
   };
 
   return (
@@ -157,7 +171,9 @@ export default function HomeScreen() {
         <Text className="text-white font-semibold text-lg">RentaYa</Text>
       </View>
 
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1" refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#D65E48"]} />
+      }>
         <View className="px-4 py-4">
           <View className="mb-4">
             <SearchBar

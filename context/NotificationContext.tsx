@@ -63,7 +63,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         
         // Escuchar notificaciones en tiempo real
         const handleNotification = (data: any) => {
-          console.log("[NotificationContext] Nueva notificación recibida:", data);
           // Incrementar contador cuando llega una notificación
           incrementUnreadCount();
           // También refrescar el contador para asegurar sincronización
