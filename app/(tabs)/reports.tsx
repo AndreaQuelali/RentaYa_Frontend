@@ -8,9 +8,11 @@ import {
   RefreshControl,
   Pressable,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import { useFocusEffect } from "expo-router";
 import { api } from "@/lib/api";
 import Logo from "@/assets/logo";
 import {
@@ -461,6 +463,7 @@ function ReportsTable({
 
 export default function ReportsScreen() {
   const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshingOnFocus, setIsRefreshingOnFocus] = useState(false);
   const [filters, setFilters] = useState<{
     propertyType: string | null;
     operationType: string | null;
@@ -484,6 +487,7 @@ export default function ReportsScreen() {
   const {
     data: statsData,
     isLoading: statsLoading,
+    isFetching: statsFetching,
     refetch: refetchStats,
   } = useQuery({
     queryKey: ["property-stats"],
@@ -496,6 +500,7 @@ export default function ReportsScreen() {
   const {
     data: reportsData,
     isLoading: reportsLoading,
+    isFetching: reportsFetching,
     refetch: refetchReports,
   } = useQuery({
     queryKey: ["property-reports"],
@@ -511,6 +516,18 @@ export default function ReportsScreen() {
       }
     },
   });
+
+  // Recargar datos cuando se enfoca la pantalla
+  useFocusEffect(
+    React.useCallback(() => {
+      setIsRefreshingOnFocus(true);
+      const loadData = async () => {
+        await Promise.all([refetchStats(), refetchReports()]);
+        setIsRefreshingOnFocus(false);
+      };
+      loadData();
+    }, [refetchStats, refetchReports])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -740,11 +757,18 @@ export default function ReportsScreen() {
     ? reportsData.data
     : [];
 
+  // Mostrar loading si es la carga inicial o si se está recargando al enfocar la pantalla
+  const isLoading = statsLoading || reportsLoading || isRefreshingOnFocus;
+
   return (
     <ScrollView
       className="flex-1 bg-gray-50"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={["#D65E48"]}
+        />
       }
     >
       <View className="bg-primary pt-12 pb-3 px-4 flex-row items-center gap-2">
@@ -755,120 +779,131 @@ export default function ReportsScreen() {
       <View className="p-4">
         <Text className="text-2xl font-bold text-gray-900 mb-2">Reportes</Text>
 
-        <SummaryCards stats={stats} isLoading={statsLoading} />
-
-        {/* Filtros */}
-        <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-          <Text className="text-md font-semibold text-gray-700 mb-3">
-            Filtrar por:
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            <Pressable
-              onPress={() => setPropertyTypeModalVisible(true)}
-              className={`px-4 py-2 rounded-lg border ${
-                filters.propertyType
-                  ? "bg-primary border-primary"
-                  : "bg-white border-gray-300"
-              }`}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filters.propertyType ? "text-white" : "text-gray-700"
-                }`}
-              >
-                {filters.propertyType || "Tipo de propiedad"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setOperationTypeModalVisible(true)}
-              className={`px-4 py-2 rounded-lg border ${
-                filters.operationType
-                  ? "bg-primary border-primary"
-                  : "bg-white border-gray-300"
-              }`}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filters.operationType ? "text-white" : "text-gray-700"
-                }`}
-              >
-                {filters.operationType || "Modalidad"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setProvinceModalVisible(true)}
-              className={`px-4 py-2 rounded-lg border ${
-                filters.province
-                  ? "bg-primary border-primary"
-                  : "bg-white border-gray-300"
-              }`}
-            >
-              <Text
-                className={`text-sm font-medium ${
-                  filters.province ? "text-white" : "text-gray-700"
-                }`}
-              >
-                {filters.province || "Provincia"}
-              </Text>
-            </Pressable>
+        {isLoading && (
+          <View className="mt-10 items-center justify-center">
+            <ActivityIndicator size="large" color="#D65E48" />
+            <Text className="text-gray-500 mt-2">Cargando reportes...</Text>
           </View>
-        </View>
+        )}
 
-        {/* Modales de filtros */}
-        <FilterModal
-          visible={propertyTypeModalVisible}
-          title="Tipo de propiedad"
-          selectedValue={filters.propertyType}
-          onSelect={(value) => handleFilterChange("propertyType", value)}
-          onClose={() => setPropertyTypeModalVisible(false)}
-          options={[
-            { label: "Todos", value: null },
-            ...(propertyTypes?.map((pt) => ({
-              label: pt.name,
-              value: pt.name as string,
-            })) || []),
-          ]}
-        />
+        {!isLoading && (
+          <>
+            <SummaryCards stats={stats} isLoading={statsLoading} />
 
-        <FilterModal
-          visible={operationTypeModalVisible}
-          title="Modalidad"
-          selectedValue={filters.operationType}
-          onSelect={(value) => handleFilterChange("operationType", value)}
-          onClose={() => setOperationTypeModalVisible(false)}
-          options={[
-            { label: "Todas", value: null },
-            ...(operationTypes?.map((ot) => ({
-              label: ot.name,
-              value: ot.name as string,
-            })) || []),
-          ]}
-        />
+            {/* Filtros */}
+            <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+              <Text className="text-md font-semibold text-gray-700 mb-3">
+                Filtrar por:
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                <Pressable
+                  onPress={() => setPropertyTypeModalVisible(true)}
+                  className={`px-4 py-2 rounded-lg border ${
+                    filters.propertyType
+                      ? "bg-primary border-primary"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      filters.propertyType ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    {filters.propertyType || "Tipo de propiedad"}
+                  </Text>
+                </Pressable>
 
-        <FilterModal
-          visible={provinceModalVisible}
-          title="Provincia"
-          selectedValue={filters.province}
-          onSelect={(value) => handleFilterChange("province", value)}
-          onClose={() => setProvinceModalVisible(false)}
-          options={[
-            { label: "Todas", value: null },
-            ...(provinces?.map((p) => ({
-              label: p.name,
-              value: p.name as string,
-            })) || []),
-          ]}
-        />
+                <Pressable
+                  onPress={() => setOperationTypeModalVisible(true)}
+                  className={`px-4 py-2 rounded-lg border ${
+                    filters.operationType
+                      ? "bg-primary border-primary"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      filters.operationType ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    {filters.operationType || "Modalidad"}
+                  </Text>
+                </Pressable>
 
-        <ReportsTable
-          reports={reports}
-          isLoading={reportsLoading}
-          onExport={handleExport}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-        />
+                <Pressable
+                  onPress={() => setProvinceModalVisible(true)}
+                  className={`px-4 py-2 rounded-lg border ${
+                    filters.province
+                      ? "bg-primary border-primary"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      filters.province ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    {filters.province || "Provincia"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Modales de filtros */}
+            <FilterModal
+              visible={propertyTypeModalVisible}
+              title="Tipo de propiedad"
+              selectedValue={filters.propertyType}
+              onSelect={(value) => handleFilterChange("propertyType", value)}
+              onClose={() => setPropertyTypeModalVisible(false)}
+              options={[
+                { label: "Todos", value: null },
+                ...(propertyTypes?.map((pt) => ({
+                  label: pt.name,
+                  value: pt.name as string,
+                })) || []),
+              ]}
+            />
+
+            <FilterModal
+              visible={operationTypeModalVisible}
+              title="Modalidad"
+              selectedValue={filters.operationType}
+              onSelect={(value) => handleFilterChange("operationType", value)}
+              onClose={() => setOperationTypeModalVisible(false)}
+              options={[
+                { label: "Todas", value: null },
+                ...(operationTypes?.map((ot) => ({
+                  label: ot.name,
+                  value: ot.name as string,
+                })) || []),
+              ]}
+            />
+
+            <FilterModal
+              visible={provinceModalVisible}
+              title="Provincia"
+              selectedValue={filters.province}
+              onSelect={(value) => handleFilterChange("province", value)}
+              onClose={() => setProvinceModalVisible(false)}
+              options={[
+                { label: "Todas", value: null },
+                ...(provinces?.map((p) => ({
+                  label: p.name,
+                  value: p.name as string,
+                })) || []),
+              ]}
+            />
+
+            <ReportsTable
+              reports={reports}
+              isLoading={reportsLoading}
+              onExport={handleExport}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+            />
+          </>
+        )}
       </View>
     </ScrollView>
   );
